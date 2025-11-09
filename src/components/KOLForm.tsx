@@ -20,7 +20,8 @@ const KOLForm: React.FC<KOLFormProps> = ({ kol, onSave, onCancel }) => {
       tags: [],
       rating: 'A' as KOLRating,
       note: '',
-      socialPlatforms: []
+      socialPlatforms: [],
+      profitShares: []
     }
   );
 
