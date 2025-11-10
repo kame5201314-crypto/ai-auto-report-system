@@ -37,6 +37,9 @@ pnpm-debug.log*
 # Environment variables
 .env
 
+# Claude Code local settings
+.claude/settings.local.json
+
 # Lock files (optional, uncomment if needed)
 # package-lock.json
 # yarn.lock
