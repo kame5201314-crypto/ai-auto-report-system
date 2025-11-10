@@ -46,18 +46,18 @@ export default function App() {
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-md">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center justify-end h-16">
-            <div className="flex items-center gap-3">
-              <div className="text-base">
-                <div className="font-semibold text-gray-800">{userName}</div>
-                <div className="text-gray-500 text-sm">{userRole}</div>
+          <div className="flex items-end justify-end h-20 pb-3">
+            <div className="flex items-center gap-4">
+              <div className="text-xl">
+                <div className="font-bold text-gray-800">{userName}</div>
+                <div className="text-gray-500 text-base">{userRole}</div>
               </div>
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2 px-3 py-2 rounded-md text-red-600 hover:bg-red-50 transition-colors"
+                className="flex items-center gap-2 px-4 py-3 rounded-md text-red-600 hover:bg-red-50 transition-colors text-lg"
                 title="登出"
               >
-                <LogOut size={18} />
+                <LogOut size={22} />
                 登出
               </button>
             </div>

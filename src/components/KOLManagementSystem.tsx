@@ -89,11 +89,11 @@ const KOLManagementSystem = () => {
     <div className="min-h-screen bg-gray-50">
       {/* 導航列 */}
       <nav className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="flex items-start justify-between">
             <button
               onClick={() => setCurrentView('dashboard')}
-              className="text-2xl font-bold text-gray-800 hover:text-blue-600 transition-colors"
+              className="text-4xl font-bold text-gray-800 hover:text-blue-600 transition-colors -mt-2"
             >
               遇見未來 KOL管理系統
             </button>
