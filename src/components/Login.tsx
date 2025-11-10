@@ -14,10 +14,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   // 預設帳號
   const defaultAccounts = [
-    { username: 'admin', password: 'admin123', role: 'admin', name: '系統管理員' },
-    { username: 'manager', password: 'manager123', role: 'manager', name: '經理' },
-    { username: 'sales', password: 'sales123', role: 'sales', name: '業務人員' },
-    { username: 'dealer', password: 'dealer123', role: 'dealer', name: '經銷商' },
+    { username: 'admin', password: 'mefu69563216', role: 'admin', name: '系統管理員' },
+    { username: 'manager', password: 'mefu69563216', role: 'manager', name: '經理' },
+    { username: 'sales', password: 'mefu69563216', role: 'sales', name: '業務人員' },
+    { username: 'dealer', password: 'mefu69563216', role: 'dealer', name: '經銷商' },
   ];
 
   // 載入記住的帳號
