@@ -9,6 +9,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
 
   // 預設帳號
@@ -18,6 +19,17 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     { username: 'sales', password: 'sales123', role: 'sales', name: '業務人員' },
     { username: 'dealer', password: 'dealer123', role: 'dealer', name: '經銷商' },
   ];
+
+  // 載入記住的帳號
+  React.useEffect(() => {
+    const savedUsername = localStorage.getItem('rememberedUsername');
+    const savedPassword = localStorage.getItem('rememberedPassword');
+    if (savedUsername && savedPassword) {
+      setUsername(savedUsername);
+      setPassword(savedPassword);
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +51,15 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       localStorage.setItem('username', account.username);
       localStorage.setItem('userRole', account.role);
       localStorage.setItem('userName', account.name);
+
+      // 處理「記住我」功能
+      if (rememberMe) {
+        localStorage.setItem('rememberedUsername', username);
+        localStorage.setItem('rememberedPassword', password);
+      } else {
+        localStorage.removeItem('rememberedUsername');
+        localStorage.removeItem('rememberedPassword');
+      }
 
       onLogin(account.username, account.role);
     } else {
@@ -100,6 +121,20 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               </div>
             </div>
 
+            {/* 記住我 */}
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="rememberMe"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label htmlFor="rememberMe" className="ml-2 text-sm text-gray-700 cursor-pointer">
+                記住我的密碼
+              </label>
+            </div>
+
             {/* 錯誤訊息 */}
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
@@ -116,26 +151,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               登入
             </button>
           </form>
-
-          {/* 測試帳號說明 */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <p className="text-sm text-gray-600 mb-3 font-medium">測試帳號：</p>
-            <div className="space-y-2 text-sm">
-              {defaultAccounts.map((acc, idx) => (
-                <div key={idx} className="flex justify-between items-center bg-gray-50 px-3 py-2 rounded">
-                  <div>
-                    <span className="font-medium text-gray-700">{acc.name}</span>
-                    <span className="text-gray-500 ml-2">({acc.role})</span>
-                  </div>
-                  <div className="text-gray-600">
-                    <code className="bg-white px-2 py-1 rounded text-xs">
-                      {acc.username} / {acc.password}
-                    </code>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* 頁尾 */}
