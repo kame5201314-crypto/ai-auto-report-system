@@ -100,8 +100,8 @@ const KOLDetail: React.FC<KOLDetailProps> = ({ kol, collaborations, salesTrackin
         <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-6 text-white">
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-3xl font-bold mb-2">名字: {kol.name}</h1>
-              <p className="text-lg opacity-90">暱稱: @{kol.nickname}</p>
+              <h1 className="text-3xl font-bold mb-2">{kol.name}</h1>
+              <p className="text-lg opacity-90">@{kol.nickname}</p>
             </div>
             <div className="flex gap-2">
               <button
