@@ -11,7 +11,7 @@ export interface SocialPlatform {
 export type KOLRating = 'S' | 'A' | 'B' | 'C' | 'D';
 
 // 分潤週期類型
-export type ProfitSharePeriod = 'monthly' | 'quarterly' | 'yearly';
+export type ProfitSharePeriod = 'monthly' | 'quarterly' | 'semi-annual' | 'yearly';
 
 // 分潤記錄
 export interface ProfitShareRecord {
