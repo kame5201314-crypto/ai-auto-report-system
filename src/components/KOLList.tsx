@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { KOL, KOLRating } from '../types/kol';
-import { Plus, Search, Edit2, Trash2, Eye, Star, Youtube, Facebook, Instagram, Twitter } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Eye, Star, Youtube, Facebook, Instagram, Twitter, Bell } from 'lucide-react';
 import { FaTiktok } from 'react-icons/fa';
+import { getPendingProfitShares, getDaysUntilEnd, getPeriodLabel } from '../utils/profitShareUtils';
 
 interface KOLListProps {
   kols: KOL[];
@@ -15,6 +16,8 @@ const KOLList: React.FC<KOLListProps> = ({ kols, onAddKOL, onEditKOL, onViewKOL,
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('全部');
   const [selectedPlatform, setSelectedPlatform] = useState<string>('全部');
+  const [showReminderModal, setShowReminderModal] = useState(false);
+  const [selectedKOLForReminder, setSelectedKOLForReminder] = useState<KOL | null>(null);
 
   // 取得評級樣式
   const getRatingStyle = (rating: KOLRating) => {
@@ -140,9 +143,26 @@ const KOLList: React.FC<KOLListProps> = ({ kols, onAddKOL, onEditKOL, onViewKOL,
             {/* 卡片頭部 */}
             <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-4 text-white">
               <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-xl font-bold">{kol.name}</h3>
-                  <p className="text-sm opacity-90">@{kol.nickname}</p>
+                <div className="flex items-center gap-2 flex-1">
+                  <div>
+                    <h3 className="text-xl font-bold">{kol.name}</h3>
+                    <p className="text-sm opacity-90">@{kol.nickname}</p>
+                  </div>
+                  {getPendingProfitShares(kol.profitShares).length > 0 && (
+                    <button
+                      onClick={() => {
+                        setSelectedKOLForReminder(kol);
+                        setShowReminderModal(true);
+                      }}
+                      className="relative p-1.5 bg-yellow-400 text-yellow-900 rounded-full hover:bg-yellow-300 transition-colors animate-pulse"
+                      title="有待處理的分潤提醒"
+                    >
+                      <Bell size={18} />
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                        {getPendingProfitShares(kol.profitShares).length}
+                      </span>
+                    </button>
+                  )}
                 </div>
                 <div className={`flex items-center gap-1 px-3 py-1 rounded-full font-bold text-sm ${getRatingStyle(kol.rating)}`}>
                   {kol.rating} 級
@@ -248,6 +268,99 @@ const KOLList: React.FC<KOLListProps> = ({ kols, onAddKOL, onEditKOL, onViewKOL,
           >
             清除篩選條件
           </button>
+        </div>
+      )}
+
+      {/* 分潤提醒彈窗 */}
+      {showReminderModal && selectedKOLForReminder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            <div className="bg-gradient-to-r from-yellow-500 to-orange-500 p-6 text-white">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <Bell size={28} />
+                  <div>
+                    <h2 className="text-2xl font-bold">分潤提醒</h2>
+                    <p className="text-sm opacity-90">{selectedKOLForReminder.name} (@{selectedKOLForReminder.nickname})</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowReminderModal(false);
+                    setSelectedKOLForReminder(null);
+                  }}
+                  className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[calc(80vh-120px)]">
+              <p className="text-gray-600 mb-4">以下分潤記錄即將到期，請及時處理：</p>
+              <div className="space-y-4">
+                {getPendingProfitShares(selectedKOLForReminder.profitShares).map(share => {
+                  const daysLeft = getDaysUntilEnd(share.periodEnd);
+                  return (
+                    <div key={share.id} className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h4 className="font-semibold text-gray-800 mb-1">
+                            {getPeriodLabel(share.period)} 分潤
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            期間：{share.periodStart} ~ {share.periodEnd}
+                          </p>
+                        </div>
+                        <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          daysLeft <= 7 ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
+                        }`}>
+                          {daysLeft} 天後到期
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 mt-3">
+                        <div>
+                          <p className="text-xs text-gray-500">銷售金額</p>
+                          <p className="font-semibold text-gray-800">NT$ {share.salesAmount.toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">分潤金額</p>
+                          <p className="font-semibold text-green-600">NT$ {share.profitAmount.toLocaleString()}</p>
+                        </div>
+                      </div>
+                      {share.note && (
+                        <p className="text-sm text-gray-600 mt-2 pt-2 border-t">
+                          <span className="font-medium">備註：</span>{share.note}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="bg-gray-50 p-4 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowReminderModal(false);
+                  setSelectedKOLForReminder(null);
+                }}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+              >
+                關閉
+              </button>
+              <button
+                onClick={() => {
+                  onEditKOL(selectedKOLForReminder);
+                  setShowReminderModal(false);
+                  setSelectedKOLForReminder(null);
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                前往處理分潤
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
