@@ -48,8 +48,9 @@ const KOLForm: React.FC<KOLFormProps> = ({ kol, onSave, onCancel }) => {
   // 分潤週期選項
   const periodOptions = [
     { value: 'monthly', label: '每月' },
-    { value: 'quarterly', label: '每季' },
-    { value: 'yearly', label: '每年' }
+    { value: 'quarterly', label: '每三個月' },
+    { value: 'semi-annual', label: '每六個月' },
+    { value: 'yearly', label: '每一年' }
   ];
 
   const handleAddCategory = () => {

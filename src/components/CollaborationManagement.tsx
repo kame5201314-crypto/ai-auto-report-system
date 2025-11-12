@@ -385,7 +385,7 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
 
               {collab.note && (
                 <div className="mt-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded">
-                  <p className="text-sm text-gray-700">{collab.note}</p>
+                  <p className="text-sm text-gray-600"><span className="text-xs text-gray-500">備註: </span>{collab.note}</p>
                 </div>
               )}
             </div>
