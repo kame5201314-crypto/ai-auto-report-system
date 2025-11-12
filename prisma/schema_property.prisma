@@ -1,0 +1,395 @@
+// Property Valuation Platform Database Schema
+// 房產估價分析平台資料庫設計
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ================================
+// 用戶與認證模組
+// ================================
+
+enum UserRole {
+  GUEST
+  BASIC
+  PREMIUM
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  EXPIRED
+  TRIAL
+}
+
+model User {
+  id                   String               @id @default(uuid())
+  email                String               @unique
+  passwordHash         String               @map("password_hash")
+  fullName             String?              @map("full_name")
+  phone                String?
+  role                 UserRole             @default(BASIC)
+  subscriptionStatus   SubscriptionStatus?  @map("subscription_status")
+  subscriptionEndDate  DateTime?            @map("subscription_end_date")
+  apiKey               String?              @unique @map("api_key")
+  apiQuotaUsed         Int                  @default(0) @map("api_quota_used")
+  apiQuotaLimit        Int                  @default(0) @map("api_quota_limit")
+  emailVerified        Boolean              @default(false) @map("email_verified")
+  avatar               String?
+  createdAt            DateTime             @default(now()) @map("created_at")
+  updatedAt            DateTime             @updatedAt @map("updated_at")
+
+  // Relations
+  valuations           Valuation[]
+  watchlist            Watchlist[]
+  subscriptions        Subscription[]
+  alerts               PriceAlert[]
+  reviews              CommunityReview[]
+  apiLogs              ApiLog[]
+
+  @@map("users")
+}
+
+model Subscription {
+  id                   String               @id @default(uuid())
+  userId               String               @map("user_id")
+  plan                 String               // basic, premium, professional, enterprise
+  status               SubscriptionStatus
+  startDate            DateTime             @map("start_date")
+  endDate              DateTime?            @map("end_date")
+  stripeSubscriptionId String?              @map("stripe_subscription_id")
+  stripeCustomerId     String?              @map("stripe_customer_id")
+  amount               Int
+  currency             String               @default("TWD")
+  metadata             Json?
+  createdAt            DateTime             @default(now()) @map("created_at")
+
+  // Relations
+  user                 User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("subscriptions")
+}
+
+// ================================
+// 房產交易數據模組
+// ================================
+
+enum BuildingType {
+  APARTMENT      // 公寓
+  MANSION        // 華廈
+  BUILDING       // 大樓
+  TOWNHOUSE      // 透天厝
+  VILLA          // 別墅
+  STORE          // 店面
+  OFFICE         // 辦公室
+  FACTORY        // 廠房
+  LAND           // 土地
+}
+
+enum TransactionType {
+  SALE           // 買賣
+  RENT           // 租賃
+  PRE_SALE       // 預售屋
+}
+
+model Transaction {
+  id                   String               @id @default(uuid())
+  city                 String
+  district             String
+  address              String
+  lat                  Decimal?             @db.Decimal(10, 8)
+  lng                  Decimal?             @db.Decimal(11, 8)
+  buildingType         BuildingType         @map("building_type")
+  transactionDate      DateTime             @map("transaction_date")
+  price                BigInt
+  unitPrice            Int                  @map("unit_price")
+  area                 Decimal              @db.Decimal(8, 2)
+  floor                Int?
+  totalFloors          Int?                 @map("total_floors")
+  buildingAge          Int?                 @map("building_age")
+  bedrooms             Int?
+  bathrooms            Int?
+  livingRooms          Int?                 @map("living_rooms")
+  parkingSpaces        Int                  @default(0) @map("parking_spaces")
+  hasElevator          Boolean              @default(false) @map("has_elevator")
+  transactionType      TransactionType      @default(SALE) @map("transaction_type")
+  dataSource           String               @default("實價登錄") @map("data_source")
+  communityId          String?              @map("community_id")
+  notes                String?
+  metadata             Json?
+  createdAt            DateTime             @default(now()) @map("created_at")
+
+  // Relations
+  community            Community?           @relation(fields: [communityId], references: [id])
+
+  @@index([city, district])
+  @@index([transactionDate])
+  @@index([lat, lng])
+  @@index([buildingType])
+  @@index([communityId])
+  @@map("transactions")
+}
+
+// ================================
+// 社區資料模組
+// ================================
+
+model Community {
+  id                   String               @id @default(uuid())
+  name                 String
+  address              String
+  city                 String
+  district             String
+  lat                  Decimal?             @db.Decimal(10, 8)
+  lng                  Decimal?             @db.Decimal(11, 8)
+  totalUnits           Int?                 @map("total_units")
+  completedYear        Int?                 @map("completed_year")
+  builder              String?
+  managementFee        Int?                 @map("management_fee")
+  parkingRatio         Decimal?             @db.Decimal(4, 2) @map("parking_ratio")
+  facilities           Json?                // ["游泳池", "健身房", "中庭花園"]
+  avgRating            Decimal?             @db.Decimal(2, 1) @map("avg_rating")
+  totalReviews         Int                  @default(0) @map("total_reviews")
+  images               String[]
+  description          String?              @db.Text
+  metadata             Json?
+  createdAt            DateTime             @default(now()) @map("created_at")
+  updatedAt            DateTime             @updatedAt @map("updated_at")
+
+  // Relations
+  transactions         Transaction[]
+  reviews              CommunityReview[]
+  watchlist            Watchlist[]
+
+  @@index([city, district])
+  @@index([lat, lng])
+  @@map("communities")
+}
+
+model CommunityReview {
+  id                   String               @id @default(uuid())
+  communityId          String               @map("community_id")
+  userId               String               @map("user_id")
+  rating               Int                  // 1-5
+  title                String?
+  content              String               @db.Text
+  pros                 String[]             // 優點
+  cons                 String[]             // 缺點
+  livingDuration       String?              @map("living_duration") // 居住時長
+  images               String[]
+  helpful              Int                  @default(0)
+  createdAt            DateTime             @default(now()) @map("created_at")
+  updatedAt            DateTime             @updatedAt @map("updated_at")
+
+  // Relations
+  community            Community            @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user                 User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([communityId])
+  @@index([userId])
+  @@map("community_reviews")
+}
+
+// ================================
+// 估價功能模組
+// ================================
+
+model Valuation {
+  id                   String               @id @default(uuid())
+  userId               String?              @map("user_id")
+  address              String
+  city                 String
+  district             String
+  lat                  Decimal?             @db.Decimal(10, 8)
+  lng                  Decimal?             @db.Decimal(11, 8)
+  buildingType         BuildingType         @map("building_type")
+  area                 Decimal              @db.Decimal(8, 2)
+  floor                Int?
+  totalFloors          Int?                 @map("total_floors")
+  buildingAge          Int?                 @map("building_age")
+  bedrooms             Int?
+  bathrooms            Int?
+  parkingSpaces        Int?                 @map("parking_spaces")
+  hasElevator          Boolean?             @map("has_elevator")
+  estimatedPrice       BigInt               @map("estimated_price")
+  unitPrice            Int                  @map("unit_price")
+  priceRange           Json                 @map("price_range") // { min: number, max: number }
+  confidence           Decimal              @db.Decimal(3, 2)
+  modelVersion         String               @map("model_version")
+  inputParams          Json                 @map("input_params")
+  resultData           Json                 @map("result_data") // 完整估價結果
+  similarTransactions  Json?                @map("similar_transactions") // 相似物件資料
+  createdAt            DateTime             @default(now()) @map("created_at")
+
+  // Relations
+  user                 User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([city, district])
+  @@index([createdAt])
+  @@map("valuations")
+}
+
+// ================================
+// 用戶功能模組
+// ================================
+
+enum WatchlistItemType {
+  TRANSACTION
+  COMMUNITY
+  ADDRESS
+  DISTRICT
+}
+
+model Watchlist {
+  id                   String               @id @default(uuid())
+  userId               String               @map("user_id")
+  itemType             WatchlistItemType    @map("item_type")
+  itemId               String               @map("item_id")
+  communityId          String?              @map("community_id")
+  alertEnabled         Boolean              @default(false) @map("alert_enabled")
+  alertConditions      Json?                @map("alert_conditions") // 價格變動條件
+  metadata             Json?
+  createdAt            DateTime             @default(now()) @map("created_at")
+
+  // Relations
+  user                 User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  community            Community?           @relation(fields: [communityId], references: [id])
+
+  @@unique([userId, itemType, itemId])
+  @@index([userId])
+  @@map("watchlist")
+}
+
+model PriceAlert {
+  id                   String               @id @default(uuid())
+  userId               String               @map("user_id")
+  city                 String
+  district             String?
+  buildingType         BuildingType?        @map("building_type")
+  minArea              Decimal?             @db.Decimal(8, 2) @map("min_area")
+  maxArea              Decimal?             @db.Decimal(8, 2) @map("max_area")
+  targetUnitPrice      Int?                 @map("target_unit_price") // 目標單價
+  priceChangePercent   Decimal?             @db.Decimal(5, 2) @map("price_change_percent") // 價格變動百分比
+  isActive             Boolean              @default(true) @map("is_active")
+  lastTriggered        DateTime?            @map("last_triggered")
+  createdAt            DateTime             @default(now()) @map("created_at")
+
+  // Relations
+  user                 User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([city, district])
+  @@map("price_alerts")
+}
+
+// ================================
+// 市場分析數據
+// ================================
+
+model MarketTrend {
+  id                   String               @id @default(uuid())
+  city                 String
+  district             String
+  period               String               // 2024-01, 2024-Q1
+  avgPrice             BigInt               @map("avg_price")
+  avgUnitPrice         Int                  @map("avg_unit_price")
+  medianPrice          BigInt               @map("median_price")
+  transactionCount     Int                  @map("transaction_count")
+  priceChange          Decimal              @db.Decimal(5, 2) @map("price_change") // 與上期相比
+  volumeChange         Decimal              @db.Decimal(5, 2) @map("volume_change")
+  data                 Json                 // 詳細數據
+  createdAt            DateTime             @default(now()) @map("created_at")
+
+  @@unique([city, district, period])
+  @@index([city, district])
+  @@index([period])
+  @@map("market_trends")
+}
+
+model DistrictStats {
+  id                   String               @id @default(uuid())
+  city                 String
+  district             String
+  avgUnitPrice         Int                  @map("avg_unit_price")
+  medianUnitPrice      Int                  @map("median_unit_price")
+  priceGrowth1Y        Decimal              @db.Decimal(5, 2) @map("price_growth_1y")
+  priceGrowth3Y        Decimal?             @db.Decimal(5, 2) @map("price_growth_3y")
+  avgTransactionTime   Int?                 @map("avg_transaction_time") // 平均成交天數
+  inventory            Int?                 // 待售物件數
+  demographics         Json?                // 人口統計資料
+  infrastructure       Json?                // 基礎設施評分
+  education            Json?                // 學區資訊
+  transportation       Json?                // 交通便利度
+  updatedAt            DateTime             @updatedAt @map("updated_at")
+
+  @@unique([city, district])
+  @@index([city])
+  @@map("district_stats")
+}
+
+// ================================
+// API 使用紀錄
+// ================================
+
+model ApiLog {
+  id                   String               @id @default(uuid())
+  userId               String?              @map("user_id")
+  apiKey               String?              @map("api_key")
+  endpoint             String
+  method               String
+  requestParams        Json?                @map("request_params")
+  responseStatus       Int                  @map("response_status")
+  responseTime         Int                  @map("response_time") // ms
+  ipAddress            String?              @map("ip_address")
+  userAgent            String?              @map("user_agent")
+  createdAt            DateTime             @default(now()) @map("created_at")
+
+  // Relations
+  user                 User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([apiKey])
+  @@index([createdAt])
+  @@map("api_logs")
+}
+
+// ================================
+// 系統設定與資料
+// ================================
+
+model SystemConfig {
+  id                   String               @id @default(uuid())
+  key                  String               @unique
+  value                Json
+  description          String?
+  updatedAt            DateTime             @updatedAt @map("updated_at")
+
+  @@map("system_config")
+}
+
+model DataImportLog {
+  id                   String               @id @default(uuid())
+  source               String               // 實價登錄、其他來源
+  importType           String               @map("import_type") // full, incremental
+  startTime            DateTime             @map("start_time")
+  endTime              DateTime?            @map("end_time")
+  recordsProcessed     Int                  @default(0) @map("records_processed")
+  recordsSuccess       Int                  @default(0) @map("records_success")
+  recordsFailed        Int                  @default(0) @map("records_failed")
+  status               String               // running, completed, failed
+  errorLog             String?              @db.Text @map("error_log")
+  metadata             Json?
+
+  @@index([source])
+  @@index([startTime])
+  @@map("data_import_logs")
+}
