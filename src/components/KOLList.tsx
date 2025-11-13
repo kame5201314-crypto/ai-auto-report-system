@@ -57,12 +57,6 @@ const KOLList: React.FC<KOLListProps> = ({ kols, onAddKOL, onEditKOL, onViewKOL,
     return kol.socialPlatforms.reduce((sum, p) => sum + p.followers, 0);
   };
 
-  // 計算平均互動率
-  const getAvgEngagement = (kol: KOL) => {
-    if (kol.socialPlatforms.length === 0) return 0;
-    const total = kol.socialPlatforms.reduce((sum, p) => sum + p.engagement, 0);
-    return (total / kol.socialPlatforms.length).toFixed(1);
-  };
 
   // 取得平台圖示
   const getPlatformIcon = (platform: string, size: number = 16) => {
@@ -139,18 +133,23 @@ const KOLList: React.FC<KOLListProps> = ({ kols, onAddKOL, onEditKOL, onViewKOL,
       {/* KOL 卡片列表 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredKOLs.map(kol => (
-          <div key={kol.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden">
+          <div
+            key={kol.id}
+            className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden cursor-pointer"
+            onClick={() => onViewKOL(kol)}
+          >
             {/* 卡片頭部 */}
             <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-4 text-white">
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-2 flex-1">
                   <div>
                     <h3 className="text-xl font-bold">{kol.name}</h3>
-                    <p className="text-sm opacity-90">@{kol.nickname}</p>
+                    {kol.nickname && <p className="text-sm opacity-90">@{kol.nickname}</p>}
                   </div>
                   {getPendingProfitShares(kol.profitShares).length > 0 && (
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setSelectedKOLForReminder(kol);
                         setShowReminderModal(true);
                       }}
@@ -201,16 +200,12 @@ const KOLList: React.FC<KOLListProps> = ({ kols, onAddKOL, onEditKOL, onViewKOL,
               </div>
 
               {/* 統計資料 */}
-              <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+              <div className="pt-2 border-t">
                 <div>
                   <p className="text-xs text-gray-500">總粉絲數</p>
                   <p className="font-semibold text-gray-800">
                     {getTotalFollowers(kol).toLocaleString()}
                   </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">平均互動率</p>
-                  <p className="font-semibold text-green-600">{getAvgEngagement(kol)}%</p>
                 </div>
               </div>
 
@@ -228,21 +223,21 @@ const KOLList: React.FC<KOLListProps> = ({ kols, onAddKOL, onEditKOL, onViewKOL,
               {/* 操作按鈕 */}
               <div className="flex gap-2 pt-2">
                 <button
-                  onClick={() => onViewKOL(kol)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEditKOL(kol);
+                  }}
                   className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors text-sm"
-                >
-                  <Eye size={16} />
-                  查看
-                </button>
-                <button
-                  onClick={() => onEditKOL(kol)}
-                  className="flex items-center justify-center px-3 py-2 bg-gray-50 text-gray-600 rounded-md hover:bg-gray-100 transition-colors"
                   title="編輯"
                 >
                   <Edit2 size={16} />
+                  編輯
                 </button>
                 <button
-                  onClick={() => onDeleteKOL(kol.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteKOL(kol.id);
+                  }}
                   className="flex items-center justify-center px-3 py-2 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors"
                   title="刪除"
                 >

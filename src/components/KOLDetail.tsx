@@ -28,11 +28,6 @@ const KOLDetail: React.FC<KOLDetailProps> = ({ kol, collaborations, salesTrackin
   // 計算總粉絲數
   const totalFollowers = kol.socialPlatforms.reduce((sum, p) => sum + p.followers, 0);
 
-  // 計算平均互動率
-  const avgEngagement = kol.socialPlatforms.length > 0
-    ? (kol.socialPlatforms.reduce((sum, p) => sum + p.engagement, 0) / kol.socialPlatforms.length).toFixed(1)
-    : 0;
-
   // 計算總收益
   const totalRevenue = salesTracking.reduce((sum, s) => sum + s.revenue, 0);
 
@@ -101,7 +96,7 @@ const KOLDetail: React.FC<KOLDetailProps> = ({ kol, collaborations, salesTrackin
           <div className="flex justify-between items-start">
             <div>
               <h1 className="text-3xl font-bold mb-2">{kol.name}</h1>
-              <p className="text-lg opacity-90">@{kol.nickname}</p>
+              {kol.nickname && <p className="text-lg opacity-90">@{kol.nickname}</p>}
             </div>
             <div className="flex gap-2">
               <button
@@ -227,64 +222,29 @@ const KOLDetail: React.FC<KOLDetailProps> = ({ kol, collaborations, salesTrackin
         </div>
       </div>
 
-      {/* 分潤記錄 */}
+      {/* 分潤記錄摘要 - 僅顯示連結 */}
       {kol.profitShares && kol.profitShares.length > 0 && (
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
             <DollarSign className="text-green-600" size={20} />
-            分潤記錄 ({kol.profitShares.length})
+            分潤記錄
           </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-4 py-3 text-left">結算日期</th>
-                  <th className="px-4 py-3 text-left">分潤週期</th>
-                  <th className="px-4 py-3 text-left">期間</th>
-                  <th className="px-4 py-3 text-right">銷售金額</th>
-                  <th className="px-4 py-3 text-right">分潤比例</th>
-                  <th className="px-4 py-3 text-right">分潤金額</th>
-                  <th className="px-4 py-3 text-left">備註</th>
-                </tr>
-              </thead>
-              <tbody>
-                {kol.profitShares.map((ps) => (
-                  <tr key={ps.id} className="border-b hover:bg-gray-50">
-                    <td className="px-4 py-3">{ps.settlementDate}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        ps.period === 'monthly' ? 'bg-blue-100 text-blue-700' :
-                        ps.period === 'quarterly' ? 'bg-purple-100 text-purple-700' :
-                        'bg-green-100 text-green-700'
-                      }`}>
-                        {ps.period === 'monthly' ? '每月' : ps.period === 'quarterly' ? '每季' : '每年'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-600">
-                      {ps.periodStart} ~ {ps.periodEnd}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      NT$ {ps.salesAmount.toLocaleString()}
-                    </td>
-                    <td className="px-4 py-3 text-right">{ps.profitShareRate}%</td>
-                    <td className="px-4 py-3 text-right font-semibold text-green-600">
-                      NT$ {ps.profitAmount.toLocaleString()}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-600">{ps.note || '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot className="bg-gray-50 font-semibold">
-                <tr>
-                  <td colSpan={5} className="px-4 py-3 text-right">總計分潤金額：</td>
-                  <td className="px-4 py-3 text-right text-green-700 text-lg">
-                    NT$ {kol.profitShares.reduce((sum, ps) => sum + ps.profitAmount, 0).toLocaleString()}
-                  </td>
-                  <td></td>
-                </tr>
-              </tfoot>
-            </table>
+          <div className="flex items-center justify-between bg-purple-50 border border-purple-200 rounded-lg p-4">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">此 KOL 共有 {kol.profitShares.length} 筆分潤記錄</p>
+              <p className="text-lg font-bold text-purple-600">
+                總分潤金額：NT$ {kol.profitShares.reduce((sum, ps) => sum + (ps.totalAmount || ps.profitAmount), 0).toLocaleString()}
+              </p>
+            </div>
+            <button
+              onClick={onEdit}
+              className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors"
+            >
+              <Eye size={18} />
+              查看完整分潤記錄
+            </button>
           </div>
+          <p className="text-xs text-gray-500 mt-2">💡 提示：完整的分潤管理功能已移至「合作專案」模組</p>
         </div>
       )}
 
@@ -312,10 +272,6 @@ const KOLDetail: React.FC<KOLDetailProps> = ({ kol, collaborations, salesTrackin
                 <div className="flex justify-between">
                   <span className="text-gray-600">粉絲數:</span>
                   <span className="font-semibold">{platform.followers.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">互動率:</span>
-                  <span className="font-semibold text-green-600">{platform.engagement}%</span>
                 </div>
                 {platform.avgViews !== undefined && (
                   <div className="flex justify-between">

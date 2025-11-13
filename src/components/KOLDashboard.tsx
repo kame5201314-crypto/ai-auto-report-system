@@ -15,16 +15,6 @@ const KOLDashboard: React.FC<KOLDashboardProps> = ({ kols, collaborations, sales
     return sum + kol.socialPlatforms.reduce((s, p) => s + p.followers, 0);
   }, 0);
 
-  // 計算平均互動率
-  const avgEngagement = kols.length > 0
-    ? kols.reduce((sum, kol) => {
-        const kolAvg = kol.socialPlatforms.length > 0
-          ? kol.socialPlatforms.reduce((s, p) => s + p.engagement, 0) / kol.socialPlatforms.length
-          : 0;
-        return sum + kolAvg;
-      }, 0) / kols.length
-    : 0;
-
   // 計算總收益
   const totalRevenue = salesTracking.reduce((sum, s) => sum + s.revenue, 0);
 
@@ -45,10 +35,7 @@ const KOLDashboard: React.FC<KOLDashboardProps> = ({ kols, collaborations, sales
     .map(kol => {
       const kolTracking = salesTracking.filter(s => s.kolId === kol.id);
       const revenue = kolTracking.reduce((sum, s) => sum + s.revenue, 0);
-      const engagement = kol.socialPlatforms.length > 0
-        ? kol.socialPlatforms.reduce((sum, p) => sum + p.engagement, 0) / kol.socialPlatforms.length
-        : 0;
-      return { kol, revenue, engagement };
+      return { kol, revenue };
     })
     .sort((a, b) => b.revenue - a.revenue)
     .slice(0, 5);
@@ -166,7 +153,7 @@ const KOLDashboard: React.FC<KOLDashboardProps> = ({ kols, collaborations, sales
         <div className="bg-white rounded-lg shadow-md p-6">
           <h3 className="text-lg font-semibold text-gray-700 mb-4">表現最佳 KOL</h3>
           <div className="space-y-3">
-            {topPerformingKOLs.map(({ kol, revenue, engagement }, idx) => (
+            {topPerformingKOLs.map(({ kol, revenue }, idx) => (
               <div key={kol.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-600 rounded-full font-bold text-sm">
@@ -174,7 +161,7 @@ const KOLDashboard: React.FC<KOLDashboardProps> = ({ kols, collaborations, sales
                   </div>
                   <div>
                     <p className="font-semibold text-gray-800">{kol.name}</p>
-                    <p className="text-sm text-gray-500">@{kol.nickname}</p>
+                    {kol.nickname && <p className="text-sm text-gray-500">@{kol.nickname}</p>}
                   </div>
                 </div>
                 <div className="text-right">
