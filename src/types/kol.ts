@@ -18,12 +18,14 @@ export interface ProfitShareRecord {
   id: string; // 唯一識別碼
   settlementDate: string; // 結算日期
   period: ProfitSharePeriod; // 分潤週期：每月/每季/每年
-  periodStart: string; // 期間開始日期
-  month?: string; // 月份選擇 (YYYY-MM 格式)
-  periodEnd: string; // 期間結束日期
+  periodStart: string; // 開始時間
+  periodEnd: string; // 結束時間
+  month?: string; // 合作月份 (從 periodStart 自動計算，YYYY-MM 格式)
   salesAmount: number; // 銷售金額
   profitShareRate: number; // 分潤比例 (%)
   profitAmount: number; // 分潤金額 (自動計算)
+  bonusAmount?: number; // 額外獎金
+  totalAmount?: number; // 總分潤金額 (profitAmount + bonusAmount)
   note?: string; // 備註
   createdAt: string;
 }

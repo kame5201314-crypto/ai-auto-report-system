@@ -30,12 +30,12 @@ const KOLForm: React.FC<KOLFormProps> = ({ kol, onSave, onCancel }) => {
 
   // 分潤表單狀態
   const [newProfitShare, setNewProfitShare] = useState({
-    period: 'monthly' as ProfitSharePeriod,
-    month: '',
     periodStart: '',
     periodEnd: '',
+    period: 'monthly' as ProfitSharePeriod,
     salesAmount: '',
     profitShareRate: '',
+    bonusAmount: '',
     note: ''
   });
 
@@ -126,6 +126,7 @@ const KOLForm: React.FC<KOLFormProps> = ({ kol, onSave, onCancel }) => {
   const handleAddProfitShare = () => {
     const salesAmount = parseFloat(newProfitShare.salesAmount);
     const profitShareRate = parseFloat(newProfitShare.profitShareRate);
+    const bonusAmount = newProfitShare.bonusAmount ? parseFloat(newProfitShare.bonusAmount) : 0;
 
     if (!newProfitShare.periodStart || !newProfitShare.periodEnd || !salesAmount || !profitShareRate) {
       alert('請填寫完整的分潤資訊');
@@ -140,16 +141,24 @@ const KOLForm: React.FC<KOLFormProps> = ({ kol, onSave, onCancel }) => {
     // 計算分潤金額
     const profitAmount = Math.round(salesAmount * (profitShareRate / 100));
 
+    // 計算總分潤金額 = 分潤金額 + 額外獎金
+    const totalAmount = profitAmount + bonusAmount;
+
+    // 從開始時間自動取得月份 (YYYY-MM)
+    const month = newProfitShare.periodStart.substring(0, 7);
+
     const newRecord: ProfitShareRecord = {
       id: Date.now().toString(),
       settlementDate: new Date().toISOString().split('T')[0],
-      month: newProfitShare.month,
+      month: month, // 自動從 periodStart 計算
       period: newProfitShare.period,
       periodStart: newProfitShare.periodStart,
       periodEnd: newProfitShare.periodEnd,
       salesAmount: salesAmount,
       profitShareRate: profitShareRate,
       profitAmount: profitAmount,
+      bonusAmount: bonusAmount,
+      totalAmount: totalAmount,
       note: newProfitShare.note,
       createdAt: new Date().toISOString()
     };
@@ -161,12 +170,12 @@ const KOLForm: React.FC<KOLFormProps> = ({ kol, onSave, onCancel }) => {
 
     // 重置表單
     setNewProfitShare({
-      month: '',
-      period: 'monthly',
       periodStart: '',
       periodEnd: '',
+      period: 'monthly',
       salesAmount: '',
       profitShareRate: '',
+      bonusAmount: '',
       note: ''
     });
   };
@@ -457,12 +466,23 @@ const KOLForm: React.FC<KOLFormProps> = ({ kol, onSave, onCancel }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">月份選擇</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">開始時間 *</label>
                 <input
-                  type="month"
-                  value={newProfitShare.month}
-                  onChange={(e) => setNewProfitShare({ ...newProfitShare, month: e.target.value })}
+                  type="date"
+                  value={newProfitShare.periodStart}
+                  onChange={(e) => setNewProfitShare({ ...newProfitShare, periodStart: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">結束時間 *</label>
+                <input
+                  type="date"
+                  value={newProfitShare.periodEnd}
+                  onChange={(e) => setNewProfitShare({ ...newProfitShare, periodEnd: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  title="請選擇合約結束日期"
                 />
               </div>
 
@@ -477,27 +497,6 @@ const KOLForm: React.FC<KOLFormProps> = ({ kol, onSave, onCancel }) => {
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">期間開始 *</label>
-                <input
-                  type="date"
-                  value={newProfitShare.periodStart}
-                  onChange={(e) => setNewProfitShare({ ...newProfitShare, periodStart: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">期間結束 *</label>
-                <input
-                  type="date"
-                  value={newProfitShare.periodEnd}
-                  onChange={(e) => setNewProfitShare({ ...newProfitShare, periodEnd: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  title="請選擇合約結束日期"
-                />
               </div>
 
               <div>
@@ -529,12 +528,40 @@ const KOLForm: React.FC<KOLFormProps> = ({ kol, onSave, onCancel }) => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  預估分潤金額
+                  分潤金額
                 </label>
-                <div className="w-full px-3 py-2 bg-green-50 border border-green-300 rounded-md text-green-700 font-semibold">
+                <div className="w-full px-3 py-2 bg-blue-50 border border-blue-300 rounded-md text-blue-700 font-semibold">
                   NT$ {newProfitShare.salesAmount && newProfitShare.profitShareRate
                     ? Math.round(parseFloat(newProfitShare.salesAmount) * (parseFloat(newProfitShare.profitShareRate) / 100)).toLocaleString()
                     : '0'}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">額外獎金 (元)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={newProfitShare.bonusAmount}
+                  onChange={(e) => setNewProfitShare({ ...newProfitShare, bonusAmount: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="選填：額外獎金"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  總分潤金額
+                </label>
+                <div className="w-full px-3 py-2 bg-green-50 border border-green-300 rounded-md text-green-700 font-bold text-lg">
+                  NT$ {(() => {
+                    const profit = newProfitShare.salesAmount && newProfitShare.profitShareRate
+                      ? Math.round(parseFloat(newProfitShare.salesAmount) * (parseFloat(newProfitShare.profitShareRate) / 100))
+                      : 0;
+                    const bonus = newProfitShare.bonusAmount ? parseFloat(newProfitShare.bonusAmount) : 0;
+                    return (profit + bonus).toLocaleString();
+                  })()}
                 </div>
               </div>
             </div>
@@ -568,13 +595,14 @@ const KOLForm: React.FC<KOLFormProps> = ({ kol, onSave, onCancel }) => {
                 <table className="w-full text-sm">
                   <thead className="bg-gray-100">
                     <tr>
-                      <th className="px-3 py-2 text-left">月份</th>
-                      <th className="px-3 py-2 text-left">結算日期</th>
+                      <th className="px-3 py-2 text-left">合作月份</th>
                       <th className="px-3 py-2 text-left">週期</th>
                       <th className="px-3 py-2 text-left">期間</th>
                       <th className="px-3 py-2 text-right">銷售金額</th>
                       <th className="px-3 py-2 text-right">分潤%</th>
                       <th className="px-3 py-2 text-right">分潤金額</th>
+                      <th className="px-3 py-2 text-right">額外獎金</th>
+                      <th className="px-3 py-2 text-right">總分潤</th>
                       <th className="px-3 py-2 text-left">備註</th>
                       <th className="px-3 py-2 text-center">操作</th>
                     </tr>
@@ -583,7 +611,6 @@ const KOLForm: React.FC<KOLFormProps> = ({ kol, onSave, onCancel }) => {
                     {formData.profitShares.map((ps) => (
                       <tr key={ps.id} className="border-b hover:bg-gray-50">
                         <td className="px-3 py-2">{ps.month || '-'}</td>
-                        <td className="px-3 py-2">{ps.settlementDate}</td>
                         <td className="px-3 py-2">
                           {periodOptions.find(p => p.value === ps.period)?.label}
                         </td>
@@ -594,8 +621,14 @@ const KOLForm: React.FC<KOLFormProps> = ({ kol, onSave, onCancel }) => {
                           NT$ {ps.salesAmount.toLocaleString()}
                         </td>
                         <td className="px-3 py-2 text-right">{ps.profitShareRate}%</td>
-                        <td className="px-3 py-2 text-right font-semibold text-green-600">
+                        <td className="px-3 py-2 text-right text-blue-600">
                           NT$ {ps.profitAmount.toLocaleString()}
+                        </td>
+                        <td className="px-3 py-2 text-right text-purple-600">
+                          {ps.bonusAmount ? `NT$ ${ps.bonusAmount.toLocaleString()}` : '-'}
+                        </td>
+                        <td className="px-3 py-2 text-right font-bold text-green-600">
+                          NT$ {(ps.totalAmount || ps.profitAmount).toLocaleString()}
                         </td>
                         <td className="px-3 py-2 text-xs text-gray-600">{ps.note || '-'}</td>
                         <td className="px-3 py-2 text-center">
