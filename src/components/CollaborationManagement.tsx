@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { KOL, Collaboration, SalesTracking } from '../types/kol';
-import { Plus, Search, Edit2, Trash2, DollarSign, Calendar, TrendingUp } from 'lucide-react';
+import { KOL, Collaboration, SalesTracking, ProfitShareRecord, Reminder } from '../types/kol';
+import { Plus, Search, Edit2, Trash2, DollarSign, Calendar, TrendingUp, Eye } from 'lucide-react';
+import CollaborationDetail from './CollaborationDetail';
 
 interface CollaborationManagementProps {
   kols: KOL[];
@@ -8,6 +9,11 @@ interface CollaborationManagementProps {
   salesTracking: SalesTracking[];
   onSaveCollaboration: (collaboration: Partial<Collaboration>) => void;
   onDeleteCollaboration: (id: number) => void;
+  onSaveProfitShare: (collaborationId: number, profitShare: Partial<ProfitShareRecord>) => void;
+  onDeleteProfitShare: (collaborationId: number, profitShareId: string) => void;
+  onSaveReminder: (collaborationId: number, reminder: Partial<Reminder>) => void;
+  onDeleteReminder: (collaborationId: number, reminderId: string) => void;
+  onToggleReminderComplete: (collaborationId: number, reminderId: string) => void;
 }
 
 const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
@@ -15,12 +21,18 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
   collaborations,
   salesTracking,
   onSaveCollaboration,
-  onDeleteCollaboration
+  onDeleteCollaboration,
+  onSaveProfitShare,
+  onDeleteProfitShare,
+  onSaveReminder,
+  onDeleteReminder,
+  onToggleReminderComplete
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('全部');
   const [showForm, setShowForm] = useState(false);
   const [editingCollab, setEditingCollab] = useState<Collaboration | null>(null);
+  const [viewingCollab, setViewingCollab] = useState<Collaboration | null>(null);
 
   const [formData, setFormData] = useState<Partial<Collaboration>>({
     kolId: 0,
@@ -114,6 +126,32 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
   const getSalesData = (collabId: number) => {
     return salesTracking.find(s => s.collaborationId === collabId);
   };
+
+  const handleViewCollaboration = (collab: Collaboration) => {
+    setViewingCollab(collab);
+  };
+
+  // 如果正在查看專案詳情
+  if (viewingCollab) {
+    const kol = kols.find(k => k.id === viewingCollab.kolId);
+    const sales = getSalesData(viewingCollab.id);
+
+    if (!kol) return null;
+
+    return (
+      <CollaborationDetail
+        collaboration={viewingCollab}
+        kol={kol}
+        salesTracking={sales}
+        onBack={() => setViewingCollab(null)}
+        onSaveProfitShare={onSaveProfitShare}
+        onDeleteProfitShare={onDeleteProfitShare}
+        onSaveReminder={onSaveReminder}
+        onDeleteReminder={onDeleteReminder}
+        onToggleReminderComplete={onToggleReminderComplete}
+      />
+    );
+  }
 
   if (showForm) {
     return (
@@ -309,6 +347,13 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
                   <p className="text-gray-600">KOL: {getKOLName(collab.kolId)}</p>
                 </div>
                 <div className="flex gap-2">
+                  <button
+                    onClick={() => handleViewCollaboration(collab)}
+                    className="p-2 text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
+                    title="查看詳情"
+                  >
+                    <Eye size={18} />
+                  </button>
                   <button
                     onClick={() => handleEditCollaboration(collab)}
                     className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
