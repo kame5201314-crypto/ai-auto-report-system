@@ -54,6 +54,9 @@ export interface KOL {
 // 合作專案狀態
 export type CollaborationStatus = 'pending' | 'negotiating' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
 
+// 合約狀態
+export type ContractStatus = 'none' | 'draft' | 'pending_signature' | 'signed' | 'expired';
+
 // 提醒類型
 export type ReminderType = 'deadline' | 'payment' | 'content_delivery' | 'follow_up' | 'other';
 
@@ -88,7 +91,7 @@ export interface Collaboration {
   actualCost: number; // 實際費用
   deliverables: string[]; // 交付內容：貼文數量、影片、限時動態等
   platforms: ('youtube' | 'facebook' | 'instagram' | 'tiktok' | 'twitter')[]; // 合作平台
-  contractUrl?: string; // 合約檔案連結
+  contractStatus: ContractStatus; // 合約狀態：無/草稿/待簽署/已簽署/已過期
   note: string;
   profitShares?: ProfitShareRecord[]; // 該專案的分潤記錄
   reminders?: Reminder[]; // 該專案的提醒記錄

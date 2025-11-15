@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { KOL, Collaboration, SalesTracking, ProfitShareRecord, Reminder } from '../types/kol';
-import { Plus, Search, Edit2, Trash2, DollarSign, Calendar, TrendingUp, Eye } from 'lucide-react';
+import { KOL, Collaboration, SalesTracking, ProfitShareRecord, Reminder, ContractStatus } from '../types/kol';
+import { Plus, Search, Edit2, Trash2, DollarSign, Calendar, TrendingUp, Eye, FileText } from 'lucide-react';
 import CollaborationDetail from './CollaborationDetail';
+import ContractGenerator from './ContractGenerator';
 
 interface CollaborationManagementProps {
   kols: KOL[];
@@ -14,6 +15,7 @@ interface CollaborationManagementProps {
   onSaveReminder: (collaborationId: number, reminder: Partial<Reminder>) => void;
   onDeleteReminder: (collaborationId: number, reminderId: string) => void;
   onToggleReminderComplete: (collaborationId: number, reminderId: string) => void;
+  onUpdateContractStatus?: (collaborationId: number, status: ContractStatus) => void;
 }
 
 const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
@@ -26,18 +28,22 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
   onDeleteProfitShare,
   onSaveReminder,
   onDeleteReminder,
-  onToggleReminderComplete
+  onToggleReminderComplete,
+  onUpdateContractStatus
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('全部');
   const [showForm, setShowForm] = useState(false);
   const [editingCollab, setEditingCollab] = useState<Collaboration | null>(null);
   const [viewingCollab, setViewingCollab] = useState<Collaboration | null>(null);
+  const [showContractGenerator, setShowContractGenerator] = useState(false);
+  const [selectedKolForContract, setSelectedKolForContract] = useState<KOL | null>(null);
 
   const [formData, setFormData] = useState<Partial<Collaboration>>({
     kolId: 0,
     projectName: '',
     productName: '',
+    productCode: '',
     status: 'pending',
     startDate: '',
     endDate: '',
@@ -45,6 +51,7 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
     actualCost: 0,
     deliverables: [],
     platforms: [],
+    contractStatus: 'none',
     note: '',
     profitShares: []
   });
@@ -52,6 +59,7 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
   // 分潤表單資料
   const [profitShareFormData, setProfitShareFormData] = useState({
     period: 'monthly' as any,
+    month: new Date().getMonth() + 1, // 當前月份 (1-12)
     periodStart: '',
     periodEnd: '',
     salesAmount: 0,
@@ -82,6 +90,7 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
       kolId: kols.length > 0 ? kols[0].id : 0,
       projectName: '',
       productName: '',
+      productCode: '',
       status: 'pending',
       startDate: today,
       endDate: '',
@@ -89,11 +98,13 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
       actualCost: 0,
       deliverables: [],
       platforms: [],
+      contractStatus: 'none',
       note: '',
       profitShares: []
     });
     setProfitShareFormData({
       period: 'monthly',
+      month: new Date().getMonth() + 1,
       periodStart: today,
       periodEnd: '',
       salesAmount: 0,
@@ -110,6 +121,7 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
     setFormData(collab);
     setProfitShareFormData({
       period: 'monthly',
+      month: new Date().getMonth() + 1,
       periodStart: collab.startDate,
       periodEnd: collab.endDate,
       salesAmount: 0,
@@ -156,6 +168,7 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
     // 重置表單
     setProfitShareFormData({
       period: 'monthly',
+      month: new Date().getMonth() + 1,
       periodStart: formData.startDate || '',
       periodEnd: formData.endDate || '',
       salesAmount: 0,
@@ -237,6 +250,7 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
         onSaveReminder={onSaveReminder}
         onDeleteReminder={onDeleteReminder}
         onToggleReminderComplete={onToggleReminderComplete}
+        onUpdateContractStatus={onUpdateContractStatus}
       />
     );
   }
@@ -279,6 +293,15 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
                 required
                 value={formData.productName}
                 onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">商品編號</label>
+              <input
+                type="text"
+                value={formData.productCode || ''}
+                onChange={(e) => setFormData({ ...formData, productCode: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -339,6 +362,21 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
           </div>
 
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">合約狀態</label>
+            <select
+              value={formData.contractStatus}
+              onChange={(e) => setFormData({ ...formData, contractStatus: e.target.value as ContractStatus })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="none">尚未準備</option>
+              <option value="draft">草稿</option>
+              <option value="pending_signature">待簽署</option>
+              <option value="signed">已簽署</option>
+              <option value="expired">已過期</option>
+            </select>
+          </div>
+
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">備註</label>
             <textarea
               value={formData.note}
@@ -369,7 +407,19 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
             {showProfitShareForm && (
               <div className="bg-gray-50 p-4 rounded-lg mb-4 space-y-3">
                 <h4 className="font-medium text-gray-700 mb-3">新增分潤記錄</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">月份 *</label>
+                    <select
+                      value={profitShareFormData.month}
+                      onChange={(e) => setProfitShareFormData({ ...profitShareFormData, month: parseInt(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(m => (
+                        <option key={m} value={m}>{m}月</option>
+                      ))}
+                    </select>
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">開始時間 *</label>
                     <input
@@ -501,6 +551,38 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
             )}
           </div>
 
+          {/* 生成合約區塊 */}
+          <div className="border-t pt-8 mt-8">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
+                <FileText className="text-purple-600" size={20} />
+                生成合約
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">
+                填寫完專案資訊後，可以生成合作授權書
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const selectedKol = kols.find(k => k.id === formData.kolId);
+                if (selectedKol) {
+                  setSelectedKolForContract(selectedKol);
+                  setShowContractGenerator(true);
+                } else {
+                  alert('請先選擇 KOL');
+                }
+              }}
+              className="w-full flex items-center justify-center gap-2 bg-purple-600 text-white py-3 px-4 rounded-md hover:bg-purple-700 transition-colors"
+            >
+              <FileText size={20} />
+              生成合約文件
+            </button>
+            <p className="text-xs text-gray-500 text-center mt-2">
+              點擊後可預覽和下載合約文件
+            </p>
+          </div>
+
           <div className="flex gap-3 pt-4">
             <button
               type="submit"
@@ -517,6 +599,17 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
             </button>
           </div>
         </form>
+
+        {/* 合約生成器 Modal */}
+        {showContractGenerator && selectedKolForContract && (
+          <ContractGenerator
+            kol={selectedKolForContract}
+            onClose={() => {
+              setShowContractGenerator(false);
+              setSelectedKolForContract(null);
+            }}
+          />
+        )}
       </div>
     );
   }

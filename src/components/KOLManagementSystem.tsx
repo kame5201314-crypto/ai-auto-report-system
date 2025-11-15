@@ -205,6 +205,15 @@ const KOLManagementSystem = () => {
     }));
   };
 
+  // 處理合約狀態更新
+  const handleUpdateContractStatus = (collaborationId: number, status: any) => {
+    setCollaborations(collaborations.map(collab =>
+      collab.id === collaborationId
+        ? { ...collab, contractStatus: status, updatedAt: new Date().toISOString().split('T')[0] }
+        : collab
+    ));
+  };
+
   // 載入中顯示
   if (loading) {
     return (
@@ -328,6 +337,7 @@ const KOLManagementSystem = () => {
             onSaveReminder={handleSaveReminder}
             onDeleteReminder={handleDeleteReminder}
             onToggleReminderComplete={handleToggleReminderComplete}
+            onUpdateContractStatus={handleUpdateContractStatus}
           />
         )}
       </main>

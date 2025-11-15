@@ -371,6 +371,7 @@ export const mockCollaborations: Collaboration[] = [
     actualCost: 180000,
     deliverables: ['YouTube 開箱影片 1 支', 'Instagram 貼文 3 則', 'IG 限時動態 5 則'],
     platforms: ['youtube', 'instagram'],
+    contractStatus: 'pending_signature',
     note: '需要在 11/15 前完成主要影片',
     createdAt: '2025-09-20',
     updatedAt: '2025-10-28'
@@ -387,7 +388,7 @@ export const mockCollaborations: Collaboration[] = [
     actualCost: 250000,
     deliverables: ['YouTube 完整評測影片 1 支', 'Instagram 快速開箱 1 則'],
     platforms: ['youtube', 'instagram'],
-    contractUrl: 'https://example.com/contract/2.pdf',
+    contractStatus: 'signed',
     note: '合作順利，成效優異',
     createdAt: '2025-08-15',
     updatedAt: '2025-10-01'
@@ -404,6 +405,7 @@ export const mockCollaborations: Collaboration[] = [
     actualCost: 80000,
     deliverables: ['Instagram 貼文 2 則', 'IG 限時動態 3 則', 'Facebook 貼文 1 則'],
     platforms: ['instagram', 'facebook'],
+    contractStatus: 'signed',
     note: '餐廳評價很好，合作愉快',
     createdAt: '2025-09-10',
     updatedAt: '2025-10-16'
@@ -420,6 +422,7 @@ export const mockCollaborations: Collaboration[] = [
     actualCost: 350000,
     deliverables: ['YouTube 實況 3 場', 'TikTok 短影片 5 支', 'Instagram 貼文 2 則'],
     platforms: ['youtube', 'tiktok', 'instagram'],
+    contractStatus: 'draft',
     note: '長期合作對象',
     createdAt: '2025-09-25',
     updatedAt: '2025-10-31'
@@ -436,7 +439,7 @@ export const mockCollaborations: Collaboration[] = [
     actualCost: 500000,
     deliverables: ['YouTube 訓練影片 4 支', 'Instagram 貼文 8 則', 'IG Reels 6 支'],
     platforms: ['youtube', 'instagram'],
-    contractUrl: 'https://example.com/contract/5.pdf',
+    contractStatus: 'none',
     note: '商品形象契合度高',
     createdAt: '2025-10-10',
     updatedAt: '2025-10-25'

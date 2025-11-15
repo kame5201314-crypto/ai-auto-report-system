@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Collaboration, KOL, ProfitShareRecord, Reminder, SalesTracking } from '../types/kol';
-import { ArrowLeft, DollarSign, Calendar, Bell, Plus, Edit2, Trash2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Collaboration, KOL, ProfitShareRecord, Reminder, SalesTracking, ContractStatus } from '../types/kol';
+import { ArrowLeft, DollarSign, Calendar, Bell, Plus, Edit2, Trash2, CheckCircle, AlertCircle, FileText } from 'lucide-react';
+import ContractGenerator from './ContractGenerator';
 
 interface CollaborationDetailProps {
   collaboration: Collaboration;
@@ -12,6 +13,7 @@ interface CollaborationDetailProps {
   onSaveReminder: (collaborationId: number, reminder: Partial<Reminder>) => void;
   onDeleteReminder: (collaborationId: number, reminderId: string) => void;
   onToggleReminderComplete: (collaborationId: number, reminderId: string) => void;
+  onUpdateContractStatus?: (collaborationId: number, status: ContractStatus) => void;
 }
 
 const CollaborationDetail: React.FC<CollaborationDetailProps> = ({
@@ -24,11 +26,13 @@ const CollaborationDetail: React.FC<CollaborationDetailProps> = ({
   onSaveReminder,
   onDeleteReminder,
   onToggleReminderComplete,
+  onUpdateContractStatus,
 }) => {
   const [showProfitShareForm, setShowProfitShareForm] = useState(false);
   const [showReminderForm, setShowReminderForm] = useState(false);
   const [editingProfitShare, setEditingProfitShare] = useState<ProfitShareRecord | null>(null);
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
+  const [showContractGenerator, setShowContractGenerator] = useState(false);
 
   // 分潤表單資料
   const [profitShareFormData, setProfitShareFormData] = useState({
@@ -198,6 +202,34 @@ const CollaborationDetail: React.FC<CollaborationDetailProps> = ({
     return map[period || 'none'] || '無';
   };
 
+  const getContractStatusText = (status: ContractStatus) => {
+    const map: { [key: string]: string } = {
+      'none': '尚未準備',
+      'draft': '草稿',
+      'pending_signature': '待簽署',
+      'signed': '已簽署',
+      'expired': '已過期'
+    };
+    return map[status] || '尚未準備';
+  };
+
+  const getContractStatusColor = (status: ContractStatus) => {
+    const map: { [key: string]: string } = {
+      'none': 'bg-gray-100 text-gray-700',
+      'draft': 'bg-blue-100 text-blue-700',
+      'pending_signature': 'bg-yellow-100 text-yellow-700',
+      'signed': 'bg-green-100 text-green-700',
+      'expired': 'bg-red-100 text-red-700'
+    };
+    return map[status] || 'bg-gray-100 text-gray-700';
+  };
+
+  const handleContractStatusChange = (newStatus: ContractStatus) => {
+    if (onUpdateContractStatus) {
+      onUpdateContractStatus(collaboration.id, newStatus);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* 返回按鈕 */}
@@ -214,7 +246,42 @@ const CollaborationDetail: React.FC<CollaborationDetailProps> = ({
         <div className="mb-4">
           <h2 className="text-2xl font-bold text-gray-800">{collaboration.projectName}</h2>
           <p className="text-gray-600 mt-1">商品：{collaboration.productName}</p>
+          {collaboration.productCode && (
+            <p className="text-gray-600">商品編號：{collaboration.productCode}</p>
+          )}
           <p className="text-gray-600">KOL：{kol.name} {kol.nickname && `(@${kol.nickname})`}</p>
+
+          {/* 合約狀態與生成按鈕 */}
+          <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">合約狀態</label>
+                <div className="flex items-center gap-3">
+                  <select
+                    value={collaboration.contractStatus}
+                    onChange={(e) => handleContractStatusChange(e.target.value as ContractStatus)}
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="none">尚未準備</option>
+                    <option value="draft">草稿</option>
+                    <option value="pending_signature">待簽署</option>
+                    <option value="signed">已簽署</option>
+                    <option value="expired">已過期</option>
+                  </select>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getContractStatusColor(collaboration.contractStatus)}`}>
+                    {getContractStatusText(collaboration.contractStatus)}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowContractGenerator(true)}
+                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors ml-4"
+              >
+                <FileText size={18} />
+                生成合約
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -614,6 +681,14 @@ const CollaborationDetail: React.FC<CollaborationDetailProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* 合約生成器 Modal */}
+      {showContractGenerator && (
+        <ContractGenerator
+          kol={kol}
+          onClose={() => setShowContractGenerator(false)}
+        />
       )}
     </div>
   );
