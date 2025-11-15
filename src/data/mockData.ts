@@ -240,6 +240,120 @@ export const mockKOLs: KOL[] = [
     ],
     createdAt: '2024-05-12',
     updatedAt: '2025-11-01'
+  },
+  {
+    id: 6,
+    name: '劉時尚',
+    nickname: 'FashionLiu',
+    email: 'fashionliu@example.com',
+    phone: '0967-890-123',
+    facebookUrl: 'https://facebook.com/fashionliu',
+    lineUrl: 'https://line.me/ti/p/fashion_liu',
+    category: ['時尚', '美妝', '生活'],
+    tags: ['穿搭達人', '時尚品味', '高質感'],
+    rating: 'A',
+    note: '時尚穿搭 KOL，風格多變',
+    socialPlatforms: [
+      {
+        platform: 'instagram',
+        handle: '@fashion_liu',
+        url: 'https://instagram.com/fashion_liu',
+        followers: 580000,
+        lastUpdated: '2025-11-05'
+      },
+      {
+        platform: 'youtube',
+        handle: '@fashionliu_style',
+        url: 'https://youtube.com/@fashionliu_style',
+        followers: 250000,
+        lastUpdated: '2025-11-05'
+      },
+      {
+        platform: 'facebook',
+        handle: '劉時尚',
+        url: 'https://facebook.com/fashionliu.official',
+        followers: 180000,
+        lastUpdated: '2025-11-05'
+      }
+    ],
+    createdAt: '2024-06-20',
+    updatedAt: '2025-11-05'
+  },
+  {
+    id: 7,
+    name: '黃旅遊',
+    nickname: 'TravelHuang',
+    email: 'travelhuang@example.com',
+    phone: '0978-901-234',
+    facebookUrl: 'https://facebook.com/travelhuang',
+    lineUrl: 'https://line.me/ti/p/travel_huang',
+    category: ['旅遊', '美食', '生活'],
+    tags: ['環遊世界', '深度旅遊', '攝影'],
+    rating: 'S',
+    note: '旅遊 KOL，足跡遍布全球',
+    socialPlatforms: [
+      {
+        platform: 'youtube',
+        handle: '@travelhuang',
+        url: 'https://youtube.com/@travelhuang',
+        followers: 720000,
+        lastUpdated: '2025-11-06'
+      },
+      {
+        platform: 'instagram',
+        handle: '@travel_huang',
+        url: 'https://instagram.com/travel_huang',
+        followers: 650000,
+        lastUpdated: '2025-11-06'
+      },
+      {
+        platform: 'facebook',
+        handle: '黃旅遊的世界',
+        url: 'https://facebook.com/travelhuang.world',
+        followers: 420000,
+        lastUpdated: '2025-11-06'
+      }
+    ],
+    createdAt: '2024-07-10',
+    updatedAt: '2025-11-06'
+  },
+  {
+    id: 8,
+    name: '吳親子',
+    nickname: 'MomWu',
+    email: 'momwu@example.com',
+    phone: '0989-012-345',
+    facebookUrl: 'https://facebook.com/momwu',
+    lineUrl: 'https://line.me/ti/p/mom_wu',
+    category: ['親子', '教育', '生活'],
+    tags: ['育兒分享', '實用內容', '正向教養'],
+    rating: 'B',
+    note: '親子教養 KOL，內容實用溫馨',
+    socialPlatforms: [
+      {
+        platform: 'facebook',
+        handle: '吳媽媽的親子日記',
+        url: 'https://facebook.com/momwu.diary',
+        followers: 380000,
+        lastUpdated: '2025-11-07'
+      },
+      {
+        platform: 'instagram',
+        handle: '@mom_wu',
+        url: 'https://instagram.com/mom_wu',
+        followers: 290000,
+        lastUpdated: '2025-11-07'
+      },
+      {
+        platform: 'youtube',
+        handle: '@momwu_parenting',
+        url: 'https://youtube.com/@momwu_parenting',
+        followers: 160000,
+        lastUpdated: '2025-11-07'
+      }
+    ],
+    createdAt: '2024-08-15',
+    updatedAt: '2025-11-07'
   }
 ];
 

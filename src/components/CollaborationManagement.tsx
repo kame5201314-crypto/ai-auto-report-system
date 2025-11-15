@@ -51,7 +51,6 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
 
   // 分潤表單資料
   const [profitShareFormData, setProfitShareFormData] = useState({
-    settlementDate: '',
     period: 'monthly' as any,
     periodStart: '',
     periodEnd: '',
@@ -94,7 +93,6 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
       profitShares: []
     });
     setProfitShareFormData({
-      settlementDate: today,
       period: 'monthly',
       periodStart: today,
       periodEnd: '',
@@ -111,7 +109,6 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
     setEditingCollab(collab);
     setFormData(collab);
     setProfitShareFormData({
-      settlementDate: new Date().toISOString().split('T')[0],
       period: 'monthly',
       periodStart: collab.startDate,
       periodEnd: collab.endDate,
@@ -125,13 +122,19 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
   };
 
   const handleAddProfitShareToForm = () => {
+    // 驗證必填欄位
+    if (!profitShareFormData.periodStart || !profitShareFormData.periodEnd) {
+      alert('請填寫開始時間和結束日期');
+      return;
+    }
+
     const profitAmount = (profitShareFormData.salesAmount * profitShareFormData.profitShareRate) / 100;
     const totalAmount = profitAmount + profitShareFormData.bonusAmount;
     const month = profitShareFormData.periodStart.substring(0, 7);
 
     const newProfitShare: any = {
       id: `temp-ps-${Date.now()}`,
-      settlementDate: profitShareFormData.settlementDate,
+      settlementDate: profitShareFormData.periodStart, // 使用開始時間作為結算日期
       period: profitShareFormData.period,
       periodStart: profitShareFormData.periodStart,
       periodEnd: profitShareFormData.periodEnd,
@@ -152,7 +155,6 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
 
     // 重置表單
     setProfitShareFormData({
-      settlementDate: new Date().toISOString().split('T')[0],
       period: 'monthly',
       periodStart: formData.startDate || '',
       periodEnd: formData.endDate || '',
@@ -369,11 +371,22 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
                 <h4 className="font-medium text-gray-700 mb-3">新增分潤記錄</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">結算日期 *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">開始時間 *</label>
                     <input
                       type="date"
-                      value={profitShareFormData.settlementDate}
-                      onChange={(e) => setProfitShareFormData({ ...profitShareFormData, settlementDate: e.target.value })}
+                      required
+                      value={profitShareFormData.periodStart}
+                      onChange={(e) => setProfitShareFormData({ ...profitShareFormData, periodStart: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">結束日期 *</label>
+                    <input
+                      type="date"
+                      required
+                      value={profitShareFormData.periodEnd}
+                      onChange={(e) => setProfitShareFormData({ ...profitShareFormData, periodEnd: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                     />
                   </div>
@@ -389,24 +402,6 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
                       <option value="semi-annual">每半年</option>
                       <option value="yearly">每年</option>
                     </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">期間開始 *</label>
-                    <input
-                      type="date"
-                      value={profitShareFormData.periodStart}
-                      onChange={(e) => setProfitShareFormData({ ...profitShareFormData, periodStart: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">期間結束 *</label>
-                    <input
-                      type="date"
-                      value={profitShareFormData.periodEnd}
-                      onChange={(e) => setProfitShareFormData({ ...profitShareFormData, periodEnd: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">銷售金額 (NT$) *</label>

@@ -32,7 +32,6 @@ const CollaborationDetail: React.FC<CollaborationDetailProps> = ({
 
   // 分潤表單資料
   const [profitShareFormData, setProfitShareFormData] = useState({
-    settlementDate: '',
     period: 'monthly' as any,
     periodStart: '',
     periodEnd: '',
@@ -62,7 +61,6 @@ const CollaborationDetail: React.FC<CollaborationDetailProps> = ({
   const handleAddProfitShare = () => {
     setEditingProfitShare(null);
     setProfitShareFormData({
-      settlementDate: new Date().toISOString().split('T')[0],
       period: 'monthly',
       periodStart: collaboration.startDate,
       periodEnd: collaboration.endDate,
@@ -77,7 +75,6 @@ const CollaborationDetail: React.FC<CollaborationDetailProps> = ({
   const handleEditProfitShare = (ps: ProfitShareRecord) => {
     setEditingProfitShare(ps);
     setProfitShareFormData({
-      settlementDate: ps.settlementDate,
       period: ps.period,
       periodStart: ps.periodStart,
       periodEnd: ps.periodEnd,
@@ -91,11 +88,21 @@ const CollaborationDetail: React.FC<CollaborationDetailProps> = ({
 
   const handleSubmitProfitShare = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // 驗證必填欄位
+    if (!profitShareFormData.periodStart || !profitShareFormData.periodEnd) {
+      alert('請填寫開始時間和結束日期');
+      return;
+    }
+
     const profitAmount = (profitShareFormData.salesAmount * profitShareFormData.profitShareRate) / 100;
     const totalAmount = profitAmount + profitShareFormData.bonusAmount;
+    const month = profitShareFormData.periodStart.substring(0, 7);
 
     const data = {
       ...profitShareFormData,
+      settlementDate: profitShareFormData.periodStart, // 使用開始時間作為結算日期
+      month: month,
       profitAmount,
       totalAmount,
       id: editingProfitShare?.id || `ps-${Date.now()}`,
@@ -182,9 +189,10 @@ const CollaborationDetail: React.FC<CollaborationDetailProps> = ({
   const getRecurringPeriodText = (period?: string) => {
     const map: { [key: string]: string } = {
       'none': '無',
+      'weekly': '每周',
       'monthly': '每月',
-      'quarterly': '每季',
-      'semi-annual': '每半年',
+      'quarterly': '每三個月',
+      'semi-annual': '每六個月',
       'yearly': '每一年'
     };
     return map[period || 'none'] || '無';
@@ -416,12 +424,22 @@ const CollaborationDetail: React.FC<CollaborationDetailProps> = ({
               <form onSubmit={handleSubmitProfitShare} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">結算日期 *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">開始時間 *</label>
                     <input
                       type="date"
                       required
-                      value={profitShareFormData.settlementDate}
-                      onChange={(e) => setProfitShareFormData({ ...profitShareFormData, settlementDate: e.target.value })}
+                      value={profitShareFormData.periodStart}
+                      onChange={(e) => setProfitShareFormData({ ...profitShareFormData, periodStart: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">結束日期 *</label>
+                    <input
+                      type="date"
+                      required
+                      value={profitShareFormData.periodEnd}
+                      onChange={(e) => setProfitShareFormData({ ...profitShareFormData, periodEnd: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                     />
                   </div>
@@ -437,26 +455,6 @@ const CollaborationDetail: React.FC<CollaborationDetailProps> = ({
                       <option value="semi-annual">每半年</option>
                       <option value="yearly">每年</option>
                     </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">期間開始 *</label>
-                    <input
-                      type="date"
-                      required
-                      value={profitShareFormData.periodStart}
-                      onChange={(e) => setProfitShareFormData({ ...profitShareFormData, periodStart: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">期間結束 *</label>
-                    <input
-                      type="date"
-                      required
-                      value={profitShareFormData.periodEnd}
-                      onChange={(e) => setProfitShareFormData({ ...profitShareFormData, periodEnd: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">銷售金額 (NT$) *</label>
@@ -582,16 +580,17 @@ const CollaborationDetail: React.FC<CollaborationDetailProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">提醒週期</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">重複提醒</label>
                   <select
                     value={reminderFormData.recurringPeriod}
                     onChange={(e) => setReminderFormData({ ...reminderFormData, recurringPeriod: e.target.value as any })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="none">無</option>
+                    <option value="weekly">每周</option>
                     <option value="monthly">每月</option>
-                    <option value="quarterly">每季</option>
-                    <option value="semi-annual">每半年</option>
+                    <option value="quarterly">每三個月</option>
+                    <option value="semi-annual">每六個月</option>
                     <option value="yearly">每一年</option>
                   </select>
                   <p className="text-xs text-gray-500 mt-1">選擇週期後，系統將自動在指定時間重複提醒</p>

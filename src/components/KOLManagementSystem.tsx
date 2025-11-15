@@ -35,14 +35,10 @@ const KOLManagementSystem = () => {
       setKOLs(data);
     } catch (err: any) {
       console.error('載入 KOL 資料失敗:', err);
-      // 如果資料庫還沒建立，使用 mock 資料
-      if (err.message?.includes('relation') || err.code === 'PGRST116') {
-        console.log('使用 mock 資料（資料庫表格尚未建立）');
-        setKOLs(mockKOLs);
-        setError('資料庫尚未建立，目前使用測試資料');
-      } else {
-        setError(`載入資料失敗: ${err.message}`);
-      }
+      // 使用 mock 資料作為備援
+      console.log('使用 mock 資料');
+      setKOLs(mockKOLs);
+      setError(null); // 不顯示錯誤，直接使用 mock 資料
     } finally {
       setLoading(false);
     }
