@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { KOL, SocialPlatform, KOLRating } from '../types/kol';
+import { KOL, SocialPlatform, KOLRating, CollaborationProcess } from '../types/kol';
 import { ArrowLeft, Plus, Trash2, Youtube, Facebook, Instagram, Twitter } from 'lucide-react';
 import { FaTiktok } from 'react-icons/fa';
 
@@ -16,9 +16,18 @@ const KOLForm: React.FC<KOLFormProps> = ({ kol, onSave, onCancel }) => {
       nickname: '',
       email: '',
       phone: '',
+      address: '',
       category: [],
       tags: [],
       rating: 'A' as KOLRating,
+      collaborationProcess: {
+        negotiationStatus: '',
+        needProduct: '',
+        productReturn: '',
+        collaborationDetails: '',
+        deadline: '',
+        resultPublication: ''
+      },
       note: '',
       socialPlatforms: []
     }
@@ -173,6 +182,16 @@ const KOLForm: React.FC<KOLFormProps> = ({ kol, onSave, onCancel }) => {
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">地址</label>
+              <input
+                type="text"
+                value={formData.address || ''}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="請輸入完整地址"
               />
             </div>
             <div>

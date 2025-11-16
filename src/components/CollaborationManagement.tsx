@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { KOL, Collaboration, SalesTracking, ProfitShareRecord, Reminder, ContractStatus } from '../types/kol';
-import { Plus, Search, Edit2, Trash2, DollarSign, Calendar, TrendingUp, Eye, FileText } from 'lucide-react';
+import { KOL, Collaboration, SalesTracking, ProfitShareRecord, Reminder, ContractStatus, CollaborationProcess } from '../types/kol';
+import { Plus, Search, Edit2, Trash2, DollarSign, Calendar, TrendingUp, Eye } from 'lucide-react';
 import CollaborationDetail from './CollaborationDetail';
-import ContractGenerator from './ContractGenerator';
 
 interface CollaborationManagementProps {
   kols: KOL[];
@@ -36,8 +35,6 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
   const [showForm, setShowForm] = useState(false);
   const [editingCollab, setEditingCollab] = useState<Collaboration | null>(null);
   const [viewingCollab, setViewingCollab] = useState<Collaboration | null>(null);
-  const [showContractGenerator, setShowContractGenerator] = useState(false);
-  const [selectedKolForContract, setSelectedKolForContract] = useState<KOL | null>(null);
 
   const [formData, setFormData] = useState<Partial<Collaboration>>({
     kolId: 0,
@@ -306,21 +303,6 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">狀態 *</label>
-              <select
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="pending">待確認</option>
-                <option value="negotiating">洽談中</option>
-                <option value="confirmed">已確認</option>
-                <option value="in_progress">進行中</option>
-                <option value="completed">已完成</option>
-                <option value="cancelled">已取消</option>
-              </select>
-            </div>
-            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">開始日期 *</label>
               <input
                 type="date"
@@ -362,6 +344,22 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
           </div>
 
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">狀態 *</label>
+            <select
+              value={formData.status}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="pending">待確認</option>
+              <option value="negotiating">洽談中</option>
+              <option value="confirmed">已確認</option>
+              <option value="in_progress">進行中</option>
+              <option value="completed">已完成</option>
+              <option value="cancelled">已取消</option>
+            </select>
+          </div>
+
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">合約狀態</label>
             <select
               value={formData.contractStatus}
@@ -376,14 +374,129 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">備註</label>
-            <textarea
-              value={formData.note}
-              onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+          {/* 合作流程管理 */}
+          <div className="border-t pt-6 mt-6">
+            <h3 className="text-lg font-semibold text-gray-700 mb-4">合作流程管理</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">1. 洽談情況</label>
+                <textarea
+                  value={formData.collaborationProcess?.negotiationStatus || ''}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    collaborationProcess: {
+                      ...formData.collaborationProcess,
+                      negotiationStatus: e.target.value
+                    }
+                  })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="請輸入洽談情況..."
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">2. 是否需要寄商品給KOL?</label>
+                  <select
+                    value={formData.collaborationProcess?.needProduct || ''}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      collaborationProcess: {
+                        ...formData.collaborationProcess,
+                        needProduct: e.target.value as 'yes' | 'no' | ''
+                      }
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">請選擇</option>
+                    <option value="yes">需要</option>
+                    <option value="no">不需要</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">3. 商品是否要收回?</label>
+                  <select
+                    value={formData.collaborationProcess?.productReturn || ''}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      collaborationProcess: {
+                        ...formData.collaborationProcess,
+                        productReturn: e.target.value as 'yes' | 'no' | ''
+                      }
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">請選擇</option>
+                    <option value="yes">需要</option>
+                    <option value="no">不需要</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">4. 合作細節</label>
+                <textarea
+                  value={formData.collaborationProcess?.collaborationDetails || ''}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    collaborationProcess: {
+                      ...formData.collaborationProcess,
+                      collaborationDetails: e.target.value
+                    }
+                  })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="請輸入合作細節..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">5. 交稿期</label>
+                <textarea
+                  value={formData.collaborationProcess?.deadline || ''}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    collaborationProcess: {
+                      ...formData.collaborationProcess,
+                      deadline: e.target.value
+                    }
+                  })}
+                  rows={2}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="請輸入交稿期..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">6. 成果發布</label>
+                <textarea
+                  value={formData.collaborationProcess?.resultPublication || ''}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    collaborationProcess: {
+                      ...formData.collaborationProcess,
+                      resultPublication: e.target.value
+                    }
+                  })}
+                  rows={2}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="請輸入成果發布資訊..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">備註</label>
+                <textarea
+                  value={formData.note}
+                  onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="請輸入備註資訊..."
+                />
+              </div>
+            </div>
           </div>
 
           {/* 分潤管理區塊 */}
@@ -559,39 +672,7 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
             </p>
           </div>
 
-          {/* 生成合約區塊 */}
-          <div className="border-t pt-8 mt-8">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
-                <FileText className="text-purple-600" size={20} />
-                生成合約
-              </h3>
-              <p className="text-sm text-gray-500 mt-1">
-                填寫完專案資訊後，可以生成合作授權書
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                const selectedKol = kols.find(k => k.id === formData.kolId);
-                if (selectedKol) {
-                  setSelectedKolForContract(selectedKol);
-                  setShowContractGenerator(true);
-                } else {
-                  alert('請先選擇 KOL');
-                }
-              }}
-              className="w-full flex items-center justify-center gap-2 bg-purple-600 text-white py-3 px-4 rounded-md hover:bg-purple-700 transition-colors"
-            >
-              <FileText size={20} />
-              生成合約文件
-            </button>
-            <p className="text-xs text-gray-500 text-center mt-2">
-              點擊後可預覽和下載合約文件
-            </p>
-          </div>
-
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3 pt-6 mt-6">
             <button
               type="submit"
               className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
@@ -607,17 +688,6 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
             </button>
           </div>
         </form>
-
-        {/* 合約生成器 Modal */}
-        {showContractGenerator && selectedKolForContract && (
-          <ContractGenerator
-            kol={selectedKolForContract}
-            onClose={() => {
-              setShowContractGenerator(false);
-              setSelectedKolForContract(null);
-            }}
-          />
-        )}
       </div>
     );
   }

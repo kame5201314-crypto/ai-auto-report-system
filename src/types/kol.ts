@@ -32,6 +32,16 @@ export interface ProfitShareRecord {
   createdAt: string;
 }
 
+// 合作流程管理
+export interface CollaborationProcess {
+  negotiationStatus?: string; // 洽談情況
+  needProduct?: 'yes' | 'no' | ''; // 是否需要寄商品給KOL
+  productReturn?: 'yes' | 'no' | ''; // 商品是否要收回
+  collaborationDetails?: string; // 合作細節
+  deadline?: string; // 交稿期
+  resultPublication?: string; // 成果發布
+}
+
 // KOL 基本資料
 export interface KOL {
   id: number;
@@ -39,11 +49,13 @@ export interface KOL {
   nickname: string; // 暱稱
   email: string;
   phone: string;
+  address?: string; // 地址
   facebookUrl?: string; // Facebook 個人頁面或 Messenger 連結
   lineUrl?: string; // Line 聯絡連結
   category: string[]; // 內容類別：美妝、3C、美食、旅遊、時尚、生活、遊戲、運動等
   tags: string[]; // 自訂標籤
   rating: KOLRating; // 評級 S/A/B/C/D
+  collaborationProcess?: CollaborationProcess; // 合作流程管理
   note: string; // 備註
   socialPlatforms: SocialPlatform[]; // 社群平台資料
   profitShares?: ProfitShareRecord[]; // 分潤記錄
@@ -92,6 +104,7 @@ export interface Collaboration {
   deliverables: string[]; // 交付內容：貼文數量、影片、限時動態等
   platforms: ('youtube' | 'facebook' | 'instagram' | 'tiktok' | 'twitter')[]; // 合作平台
   contractStatus: ContractStatus; // 合約狀態：無/草稿/待簽署/已簽署/已過期
+  collaborationProcess?: CollaborationProcess; // 合作流程管理
   note: string;
   profitShares?: ProfitShareRecord[]; // 該專案的分潤記錄
   reminders?: Reminder[]; // 該專案的提醒記錄

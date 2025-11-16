@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { KOL, Collaboration, SalesTracking, KOLRating } from '../types/kol';
-import { ArrowLeft, Edit, Mail, Phone, MapPin, Star, Youtube, Facebook, Instagram, Twitter, TrendingUp, DollarSign, Eye, Heart, MessageCircle, Share2, FileText } from 'lucide-react';
+import { ArrowLeft, Edit, Mail, Phone, MapPin, Star, Youtube, Facebook, Instagram, Twitter, TrendingUp, DollarSign, Eye, Heart, MessageCircle, Share2 } from 'lucide-react';
 import { FaTiktok, FaLine } from 'react-icons/fa';
-import ContractGenerator from './ContractGenerator';
 
 interface KOLDetailProps {
   kol: KOL;
@@ -13,7 +12,6 @@ interface KOLDetailProps {
 }
 
 const KOLDetail: React.FC<KOLDetailProps> = ({ kol, collaborations, salesTracking, onEdit, onBack }) => {
-  const [showContractGenerator, setShowContractGenerator] = useState(false);
   // 取得評級樣式
   const getRatingStyle = (rating: KOLRating) => {
     const styles = {
@@ -116,13 +114,6 @@ const KOLDetail: React.FC<KOLDetailProps> = ({ kol, collaborations, salesTrackin
               {kol.nickname && <p className="text-lg opacity-90">@{kol.nickname}</p>}
             </div>
             <div className="flex gap-2">
-              <button
-                onClick={() => setShowContractGenerator(true)}
-                className="flex items-center gap-2 bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-md transition-colors"
-              >
-                <FileText size={18} />
-                生成合約
-              </button>
               <button
                 onClick={onEdit}
                 className="flex items-center gap-2 bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-md transition-colors"
@@ -239,15 +230,17 @@ const KOLDetail: React.FC<KOLDetailProps> = ({ kol, collaborations, salesTrackin
         </div>
       </div>
 
-      {/* 分潤記錄摘要 */}
+      {/* 分潤記錄詳情 */}
       {totalRecords > 0 && (
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
             <DollarSign className="text-green-600" size={20} />
-            分潤記錄總覽
+            分潤記錄 ({totalRecords} 筆)
           </h3>
-          <div className="bg-gradient-to-r from-green-50 to-purple-50 border border-green-200 rounded-lg p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+
+          {/* 總覽統計 */}
+          <div className="bg-gradient-to-r from-green-50 to-purple-50 border border-green-200 rounded-lg p-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-gray-600 mb-1">分潤記錄總數</p>
                 <p className="text-2xl font-bold text-purple-600">{totalRecords} 筆</p>
@@ -257,9 +250,81 @@ const KOLDetail: React.FC<KOLDetailProps> = ({ kol, collaborations, salesTrackin
                 <p className="text-2xl font-bold text-green-600">NT$ {totalAmount.toLocaleString()}</p>
               </div>
             </div>
-            <p className="text-xs text-gray-500 bg-white bg-opacity-60 p-3 rounded border border-gray-200">
-              💡 <strong>提示：</strong>分潤記錄按合作專案管理。請前往「合作專案」模組查看各專案的詳細分潤記錄並進行管理。
-            </p>
+          </div>
+
+          {/* 詳細記錄列表 */}
+          <div className="space-y-4">
+            {collaborations.map(collab => {
+              if (!collab.profitShares || collab.profitShares.length === 0) return null;
+
+              return (
+                <div key={collab.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <div className="mb-3 pb-3 border-b border-gray-300">
+                    <h4 className="font-semibold text-gray-800 mb-1">{collab.projectName}</h4>
+                    <p className="text-sm text-gray-600">商品: {collab.productName}</p>
+                    <p className="text-xs text-gray-500 mt-1">專案期間: {collab.startDate} ~ {collab.endDate}</p>
+                  </div>
+
+                  <div className="space-y-3">
+                    {collab.profitShares.map((ps) => {
+                      const profitAmount = ps.profitAmount || (ps.salesAmount * ps.profitShareRate) / 100;
+                      const bonusAmount = ps.bonusAmount || 0;
+                      const total = ps.totalAmount || (profitAmount + bonusAmount);
+
+                      return (
+                        <div key={ps.id} className="bg-white border border-green-200 rounded-lg p-4">
+                          <div className="flex justify-between items-start mb-3">
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-semibold text-gray-800">
+                                  {ps.periodStart} ~ {ps.periodEnd}
+                                </span>
+                                <span className="px-2 py-0.5 bg-green-600 text-white text-xs rounded">
+                                  {ps.period === 'monthly' ? '每月' : ps.period === 'quarterly' ? '每季' : ps.period === 'semi-annual' ? '每半年' : '每年'}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-500">結算日期: {ps.settlementDate}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm text-gray-600">總分潤</p>
+                              <p className="text-xl font-bold text-green-600">NT$ {total.toLocaleString()}</p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                            <div className="bg-blue-50 rounded p-2">
+                              <p className="text-xs text-gray-600 mb-1">銷售金額</p>
+                              <p className="font-semibold text-blue-700">NT$ {ps.salesAmount.toLocaleString()}</p>
+                            </div>
+                            <div className="bg-purple-50 rounded p-2">
+                              <p className="text-xs text-gray-600 mb-1">分潤比例</p>
+                              <p className="font-semibold text-purple-700">{ps.profitShareRate}%</p>
+                            </div>
+                            <div className="bg-green-50 rounded p-2">
+                              <p className="text-xs text-gray-600 mb-1">分潤金額</p>
+                              <p className="font-semibold text-green-700">NT$ {profitAmount.toLocaleString()}</p>
+                            </div>
+                            {bonusAmount > 0 && (
+                              <div className="bg-orange-50 rounded p-2">
+                                <p className="text-xs text-gray-600 mb-1">額外獎金</p>
+                                <p className="font-semibold text-orange-700">NT$ {bonusAmount.toLocaleString()}</p>
+                              </div>
+                            )}
+                          </div>
+
+                          {ps.note && (
+                            <div className="mt-3 pt-3 border-t border-gray-200">
+                              <p className="text-xs text-gray-600">備註</p>
+                              <p className="text-sm text-gray-700 mt-1">{ps.note}</p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -325,7 +390,7 @@ const KOLDetail: React.FC<KOLDetailProps> = ({ kol, collaborations, salesTrackin
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <h5 className="font-semibold text-gray-800">{collab.projectName}</h5>
-                          <p className="text-sm text-gray-600">{collab.brand}</p>
+                          <p className="text-sm text-gray-600">{collab.productName}</p>
                         </div>
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(collab.status)}`}>
                           {getStatusText(collab.status)}
@@ -369,7 +434,7 @@ const KOLDetail: React.FC<KOLDetailProps> = ({ kol, collaborations, salesTrackin
                         <div className="flex justify-between items-start mb-2">
                           <div>
                             <h5 className="font-semibold text-gray-800">{collab.projectName}</h5>
-                            <p className="text-sm text-gray-600">{collab.brand}</p>
+                            <p className="text-sm text-gray-600">{collab.productName}</p>
                           </div>
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(collab.status)}`}>
                             {getStatusText(collab.status)}
@@ -413,14 +478,6 @@ const KOLDetail: React.FC<KOLDetailProps> = ({ kol, collaborations, salesTrackin
           </div>
         )}
       </div>
-
-      {/* 合約生成器 */}
-      {showContractGenerator && (
-        <ContractGenerator
-          kol={kol}
-          onClose={() => setShowContractGenerator(false)}
-        />
-      )}
     </div>
   );
 };

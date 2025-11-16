@@ -10,6 +10,9 @@ interface KOLDashboardProps {
 }
 
 const KOLDashboard: React.FC<KOLDashboardProps> = ({ kols, collaborations, salesTracking }) => {
+  // 獲取當前月份
+  const currentMonth = new Date().toISOString().substring(0, 7); // YYYY-MM 格式
+
   // 計算總粉絲數
   const totalFollowers = kols.reduce((sum, kol) => {
     return sum + kol.socialPlatforms.reduce((s, p) => s + p.followers, 0);
@@ -18,8 +21,18 @@ const KOLDashboard: React.FC<KOLDashboardProps> = ({ kols, collaborations, sales
   // 計算總收益
   const totalRevenue = salesTracking.reduce((sum, s) => sum + s.revenue, 0);
 
+  // 計算本月銷售金額
+  const monthlyRevenue = salesTracking
+    .filter(s => s.createdAt.startsWith(currentMonth))
+    .reduce((sum, s) => sum + s.revenue, 0);
+
   // 計算總預算
   const totalBudget = collaborations.reduce((sum, c) => sum + c.budget, 0);
+
+  // 計算本月合作花費 (當月開始的合作)
+  const monthlySpending = collaborations
+    .filter(c => c.startDate.startsWith(currentMonth))
+    .reduce((sum, c) => sum + c.actualCost, 0);
 
   // 進行中的合作
   const activeCollaborations = collaborations.filter(c => c.status === 'in_progress' || c.status === 'confirmed');
@@ -27,18 +40,24 @@ const KOLDashboard: React.FC<KOLDashboardProps> = ({ kols, collaborations, sales
   // 已完成的合作
   const completedCollaborations = collaborations.filter(c => c.status === 'completed');
 
-  // 計算 ROI
+  // 計算總 ROI
   const roi = totalBudget > 0 ? ((totalRevenue - totalBudget) / totalBudget * 100).toFixed(1) : 0;
 
-  // 取得表現最佳的 KOL
+  // 計算本月 ROI
+  const monthlyROI = monthlySpending > 0 ? ((monthlyRevenue - monthlySpending) / monthlySpending * 100).toFixed(1) : 0;
+
+  // 取得表現最佳的前 10 位 KOL
   const topPerformingKOLs = kols
     .map(kol => {
       const kolTracking = salesTracking.filter(s => s.kolId === kol.id);
       const revenue = kolTracking.reduce((sum, s) => sum + s.revenue, 0);
-      return { kol, revenue };
+      const kolCollaborations = collaborations.filter(c => c.kolId === kol.id);
+      const cost = kolCollaborations.reduce((sum, c) => sum + c.actualCost, 0);
+      const kolROI = cost > 0 ? ((revenue - cost) / cost * 100) : 0;
+      return { kol, revenue, cost, roi: kolROI };
     })
     .sort((a, b) => b.revenue - a.revenue)
-    .slice(0, 5);
+    .slice(0, 10);
 
   // 按分類統計 KOL
   const categoryStats = kols.reduce((acc, kol) => {
@@ -117,63 +136,132 @@ const KOLDashboard: React.FC<KOLDashboardProps> = ({ kols, collaborations, sales
         </div>
       </div>
 
-      {/* 財務指標 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-md p-6 text-white">
-          <div className="flex items-center gap-3 mb-2">
-            <DollarSign size={28} />
-            <span className="text-lg">總銷售金額</span>
+      {/* 本月財務指標 */}
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg shadow-md p-6 border-2 border-blue-200">
+        <h3 className="text-xl font-bold text-blue-800 mb-5 flex items-center gap-2">
+          <BarChart className="text-blue-600" size={26} />
+          本月財務數據
+          <span className="ml-2 text-sm font-normal text-blue-600 bg-blue-100 px-3 py-1 rounded-full">{currentMonth}</span>
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-cyan-500 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 bg-cyan-100 rounded-lg">
+                <DollarSign size={24} className="text-cyan-600" />
+              </div>
+              <span className="text-sm font-medium text-gray-600">本月銷售金額</span>
+            </div>
+            <p className="text-3xl font-bold text-cyan-700">NT$ {monthlyRevenue.toLocaleString()}</p>
+            <p className="text-xs text-gray-500 mt-2">當月業績表現</p>
           </div>
-          <p className="text-3xl font-bold">NT$ {totalRevenue.toLocaleString()}</p>
-          <p className="text-sm opacity-90 mt-1">來自 {salesTracking.length} 筆追蹤</p>
-        </div>
 
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-md p-6 text-white">
-          <div className="flex items-center gap-3 mb-2">
-            <DollarSign size={28} />
-            <span className="text-lg">總行銷預算</span>
+          <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-amber-500 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 bg-amber-100 rounded-lg">
+                <DollarSign size={24} className="text-amber-600" />
+              </div>
+              <span className="text-sm font-medium text-gray-600">本月合作花費</span>
+            </div>
+            <p className="text-3xl font-bold text-amber-700">NT$ {monthlySpending.toLocaleString()}</p>
+            <p className="text-xs text-gray-500 mt-2">當月行銷投入</p>
           </div>
-          <p className="text-3xl font-bold">NT$ {totalBudget.toLocaleString()}</p>
-          <p className="text-sm opacity-90 mt-1">共 {collaborations.length} 個專案</p>
-        </div>
 
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-md p-6 text-white">
-          <div className="flex items-center gap-3 mb-2">
-            <TrendingUp size={28} />
-            <span className="text-lg">ROI</span>
+          <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-indigo-500 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 bg-indigo-100 rounded-lg">
+                <TrendingUp size={24} className="text-indigo-600" />
+              </div>
+              <span className="text-sm font-medium text-gray-600">本月 ROI</span>
+            </div>
+            <p className="text-3xl font-bold text-indigo-700">{monthlyROI}%</p>
+            <p className="text-xs text-gray-500 mt-2">當月投資回報率</p>
           </div>
-          <p className="text-3xl font-bold">{roi}%</p>
-          <p className="text-sm opacity-90 mt-1">投資回報率</p>
+        </div>
+      </div>
+
+      {/* 總體財務指標 */}
+      <div className="bg-gradient-to-br from-slate-50 to-gray-100 rounded-lg shadow-md p-6 border-2 border-gray-300">
+        <h3 className="text-xl font-bold text-gray-800 mb-5 flex items-center gap-2">
+          <TrendingUp className="text-gray-700" size={26} />
+          累計財務數據
+          <span className="ml-2 text-sm font-normal text-gray-600 bg-gray-200 px-3 py-1 rounded-full">總計</span>
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-emerald-500 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 bg-emerald-100 rounded-lg">
+                <DollarSign size={24} className="text-emerald-600" />
+              </div>
+              <span className="text-sm font-medium text-gray-600">總銷售金額</span>
+            </div>
+            <p className="text-3xl font-bold text-emerald-700">NT$ {totalRevenue.toLocaleString()}</p>
+            <p className="text-xs text-gray-500 mt-2">來自 {salesTracking.length} 筆追蹤</p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-rose-500 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 bg-rose-100 rounded-lg">
+                <DollarSign size={24} className="text-rose-600" />
+              </div>
+              <span className="text-sm font-medium text-gray-600">總行銷預算</span>
+            </div>
+            <p className="text-3xl font-bold text-rose-700">NT$ {totalBudget.toLocaleString()}</p>
+            <p className="text-xs text-gray-500 mt-2">共 {collaborations.length} 個專案</p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-violet-500 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 bg-violet-100 rounded-lg">
+                <TrendingUp size={24} className="text-violet-600" />
+              </div>
+              <span className="text-sm font-medium text-gray-600">總 ROI</span>
+            </div>
+            <p className="text-3xl font-bold text-violet-700">{roi}%</p>
+            <p className="text-xs text-gray-500 mt-2">總投資回報率</p>
+          </div>
+        </div>
+      </div>
+
+      {/* 成效最佳前 10 位 KOL */}
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
+          <Star className="text-yellow-500" size={24} />
+          成效最佳前 10 位 KOL
+        </h3>
+        <div className="space-y-2">
+          {topPerformingKOLs.map(({ kol, revenue, cost, roi }, idx) => (
+            <div key={kol.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+              <div className="flex items-center gap-3 flex-1">
+                <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
+                  idx === 0 ? 'bg-yellow-100 text-yellow-600' :
+                  idx === 1 ? 'bg-gray-100 text-gray-600' :
+                  idx === 2 ? 'bg-orange-100 text-orange-600' :
+                  'bg-blue-100 text-blue-600'
+                }`}>
+                  {idx + 1}
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-800">{kol.name}</p>
+                  {kol.nickname && <p className="text-xs text-gray-500">@{kol.nickname}</p>}
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="font-semibold text-green-600">NT$ {revenue.toLocaleString()}</p>
+                <p className="text-xs text-gray-500">成本: NT$ {cost.toLocaleString()}</p>
+                <p className={`text-xs font-medium ${roi >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  ROI: {roi.toFixed(1)}%
+                </p>
+              </div>
+            </div>
+          ))}
+          {topPerformingKOLs.length === 0 && (
+            <p className="text-gray-500 text-center py-8">尚無數據</p>
+          )}
         </div>
       </div>
 
       {/* 兩欄佈局 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 表現最佳 KOL */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">表現最佳 KOL</h3>
-          <div className="space-y-3">
-            {topPerformingKOLs.map(({ kol, revenue }, idx) => (
-              <div key={kol.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-600 rounded-full font-bold text-sm">
-                    {idx + 1}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-800">{kol.name}</p>
-                    {kol.nickname && <p className="text-sm text-gray-500">@{kol.nickname}</p>}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-semibold text-green-600">NT$ {revenue.toLocaleString()}</p>
-                </div>
-              </div>
-            ))}
-            {topPerformingKOLs.length === 0 && (
-              <p className="text-gray-500 text-center py-8">尚無數據</p>
-            )}
-          </div>
-        </div>
 
         {/* 熱門分類 */}
         <div className="bg-white rounded-lg shadow-md p-6">
