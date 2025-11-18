@@ -747,44 +747,15 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
           const salesData = getSalesData(collab.id);
           return (
             <div key={collab.id} className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-xl font-semibold text-gray-800">{collab.projectName}</h3>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(collab.status)}`}>
-                      {getStatusText(collab.status)}
-                    </span>
-                  </div>
-                  <p className="text-gray-600 mb-1">商品: {collab.productName}</p>
-                  <p className="text-gray-600">KOL: {getKOLName(collab.kolId)}</p>
+              <div className="mb-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <h3 className="text-xl font-semibold text-gray-800">{collab.projectName}</h3>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(collab.status)}`}>
+                    {getStatusText(collab.status)}
+                  </span>
                 </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => handleViewCollaboration(collab)}
-                    className="p-2 text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
-                    title="查看詳情"
-                  >
-                    <Eye size={24} />
-                  </button>
-                  <button
-                    onClick={() => handleEditCollaboration(collab)}
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                    title="編輯"
-                  >
-                    <Edit2 size={24} />
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (confirm('確定要刪除此合作專案嗎？相關的分潤記錄和提醒也會一併刪除。')) {
-                        onDeleteCollaboration(collab.id);
-                      }
-                    }}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                    title="刪除"
-                  >
-                    <Trash2 size={20} />
-                  </button>
-                </div>
+                <p className="text-gray-600 mb-1">商品: {collab.productName}</p>
+                <p className="text-gray-600">KOL: {getKOLName(collab.kolId)}</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -835,12 +806,6 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
                       <p className="text-lg font-bold text-orange-600">NT$ {salesData.commission.toLocaleString()}</p>
                     </div>
                   </div>
-                  {salesData.discountCode && (
-                    <div className="mt-3 text-sm">
-                      <span className="text-gray-600">折扣碼:</span>
-                      <span className="ml-2 font-mono font-semibold text-blue-600">{salesData.discountCode}</span>
-                    </div>
-                  )}
                 </div>
               )}
 
@@ -849,6 +814,35 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
                   <p className="text-sm text-gray-600"><span className="text-xs text-gray-500">備註: </span>{collab.note}</p>
                 </div>
               )}
+
+              {/* 操作按鈕 */}
+              <div className="flex justify-end gap-3 mt-4 pt-4 border-t">
+                <button
+                  onClick={() => handleViewCollaboration(collab)}
+                  className="p-2 text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
+                  title="查看詳情"
+                >
+                  <Eye size={24} />
+                </button>
+                <button
+                  onClick={() => handleEditCollaboration(collab)}
+                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                  title="編輯"
+                >
+                  <Edit2 size={24} />
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm('確定要刪除此合作專案嗎？相關的分潤記錄和提醒也會一併刪除。')) {
+                      onDeleteCollaboration(collab.id);
+                    }
+                  }}
+                  className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                  title="刪除"
+                >
+                  <Trash2 size={20} />
+                </button>
+              </div>
             </div>
           );
         })}
