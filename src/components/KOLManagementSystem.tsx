@@ -6,6 +6,7 @@ import KOLList from './KOLList';
 import KOLDetail from './KOLDetail';
 import KOLForm from './KOLForm';
 import CollaborationManagement from './CollaborationManagement';
+import CollaborationDetail from './CollaborationDetail';
 import { Users, Briefcase, DollarSign, BarChart3 } from 'lucide-react';
 import * as kolService from '../services/kolService';
 import * as collaborationService from '../services/collaborationService';
@@ -22,6 +23,7 @@ const KOLManagementSystem = () => {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
   const [selectedKOL, setSelectedKOL] = useState<KOL | null>(null);
   const [editingKOL, setEditingKOL] = useState<KOL | null>(null);
+  const [viewingCollaboration, setViewingCollaboration] = useState<Collaboration | null>(null);
 
   // 載入 KOL 資料和合作專案
   useEffect(() => {
@@ -321,7 +323,7 @@ const KOLManagementSystem = () => {
           />
         )}
 
-        {currentView === 'detail' && selectedKOL && (
+        {currentView === 'detail' && selectedKOL && !viewingCollaboration && (
           <KOLDetail
             kol={selectedKOL}
             collaborations={collaborations.filter(c => c.kolId === selectedKOL.id)}
@@ -329,13 +331,25 @@ const KOLManagementSystem = () => {
             onEdit={() => handleEditKOL(selectedKOL)}
             onBack={() => setCurrentView('list')}
             onViewCollaboration={(collab) => {
-              setCurrentView('collaborations');
-              // 這裡可以設置一個狀態來直接顯示該合作專案的詳情
+              setViewingCollaboration(collab);
             }}
             onViewProfitShares={(collab) => {
-              setCurrentView('collaborations');
-              // 這裡可以設置一個狀態來顯示該合作專案的分潤記錄
+              setViewingCollaboration(collab);
             }}
+          />
+        )}
+
+        {/* 查看合作專案詳情 */}
+        {viewingCollaboration && selectedKOL && (
+          <CollaborationDetail
+            collaboration={viewingCollaboration}
+            kol={selectedKOL}
+            salesTracking={salesTracking.find(s => s.collaborationId === viewingCollaboration.id)}
+            onBack={() => setViewingCollaboration(null)}
+            onSaveProfitShare={handleSaveProfitShare}
+            onDeleteProfitShare={handleDeleteProfitShare}
+            onSaveReminder={handleSaveReminder}
+            onDeleteReminder={handleDeleteReminder}
           />
         )}
 
