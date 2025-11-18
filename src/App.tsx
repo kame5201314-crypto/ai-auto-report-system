@@ -43,34 +43,34 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-md">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-end justify-between h-20 pb-3">
-            <div>
-              <Link to="/" className="text-xl font-bold text-gray-800">系統主選單</Link>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <div className="font-bold text-gray-800">
-                  {userName || user?.user_metadata?.username || user?.email?.split('@')[0]}
-                </div>
-                <div className="text-gray-500 text-base">{userRole || 'user'}</div>
+    <BrowserRouter>
+      <div className="min-h-screen bg-gray-50">
+        <nav className="bg-white shadow-md">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="flex items-end justify-between h-20 pb-3">
+              <div>
+                <Link to="/" className="text-xl font-bold text-gray-800">系統主選單</Link>
               </div>
-              <button
-                onClick={async () => { await handleLogout(); window.location.href = '/' }}
-                className="flex items-center gap-2 px-4 py-3 rounded-md text-red-600 hover:bg-red-50 transition-colors text-lg"
-                title="登出"
-              >
-                <LogOut size={22} />
-                登出
-              </button>
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <div className="font-bold text-gray-800">
+                    {userName || user?.user_metadata?.username || user?.email?.split('@')[0]}
+                  </div>
+                  <div className="text-gray-500 text-base">{userRole || 'user'}</div>
+                </div>
+                <button
+                  onClick={async () => { await handleLogout(); window.location.href = '/' }}
+                  className="flex items-center gap-2 px-4 py-3 rounded-md text-red-600 hover:bg-red-50 transition-colors text-lg"
+                  title="登出"
+                >
+                  <LogOut size={22} />
+                  登出
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      </nav>
+        </nav>
 
-      <BrowserRouter>
         <Routes>
           <Route path="/" element={
             <div className="max-w-7xl mx-auto px-6 py-8">
@@ -96,8 +96,8 @@ function AppContent() {
           <Route path="/kol" element={<KOLManagementSystem />} />
           <Route path="/rentsync/*" element={<RentSyncMain />} />
         </Routes>
-      </BrowserRouter>
-    </div>
+      </div>
+    </BrowserRouter>
   )
 }
 
