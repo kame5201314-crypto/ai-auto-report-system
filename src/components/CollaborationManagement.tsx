@@ -615,8 +615,7 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
                   onClick={handleAddProfitShareToForm}
                   className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
                 >
-                  <Plus size={20} />
-                  加入分潤記錄
+                  確定
                 </button>
               </div>
             )}
