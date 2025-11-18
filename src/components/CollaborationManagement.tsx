@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { KOL, Collaboration, SalesTracking, ProfitShareRecord, Reminder, ContractStatus, CollaborationProcess } from '../types/kol';
+import { KOL, Collaboration, SalesTracking, ProfitShareRecord, Reminder, ContractStatus, CollaborationProcess, ProfitShareType } from '../types/kol';
 import { Plus, Search, Edit2, Trash2, DollarSign, Calendar, TrendingUp, Eye } from 'lucide-react';
 import CollaborationDetail from './CollaborationDetail';
 
@@ -56,6 +56,7 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
   // 分潤表單資料
   const [profitShareFormData, setProfitShareFormData] = useState({
     period: 'monthly' as any,
+    profitShareType: 'natural' as ProfitShareType,
     month: new Date().getMonth() + 1, // 當前月份 (1-12)
     periodStart: '',
     periodEnd: '',
@@ -101,6 +102,7 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
     });
     setProfitShareFormData({
       period: 'monthly',
+      profitShareType: 'natural',
       month: new Date().getMonth() + 1,
       periodStart: today,
       periodEnd: '',
@@ -118,6 +120,7 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
     setFormData(collab);
     setProfitShareFormData({
       period: 'monthly',
+      profitShareType: 'natural',
       month: new Date().getMonth() + 1,
       periodStart: collab.startDate,
       periodEnd: collab.endDate,
@@ -145,6 +148,7 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
       id: `temp-ps-${Date.now()}`,
       settlementDate: profitShareFormData.periodStart, // 使用開始時間作為結算日期
       period: profitShareFormData.period,
+      profitShareType: profitShareFormData.profitShareType,
       periodStart: profitShareFormData.periodStart,
       periodEnd: profitShareFormData.periodEnd,
       month: month,
@@ -165,6 +169,7 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
     // 重置表單
     setProfitShareFormData({
       period: 'monthly',
+      profitShareType: 'natural',
       month: new Date().getMonth() + 1,
       periodStart: formData.startDate || '',
       periodEnd: formData.endDate || '',
@@ -180,6 +185,7 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
     // 填入要編輯的分潤記錄到表單
     setProfitShareFormData({
       period: ps.period,
+      profitShareType: ps.profitShareType || 'natural',
       month: ps.month || new Date().getMonth() + 1,
       periodStart: ps.periodStart,
       periodEnd: ps.periodEnd,
@@ -535,7 +541,7 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
             {showProfitShareForm && (
               <div className="bg-gray-50 p-4 rounded-lg mb-4 space-y-3">
                 <h4 className="font-medium text-gray-700 mb-3">新增分潤記錄</h4>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">月份 *</label>
                     <select
@@ -546,6 +552,32 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(m => (
                         <option key={m} value={m}>{m}月</option>
                       ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">分潤週期 *</label>
+                    <select
+                      value={profitShareFormData.period}
+                      onChange={(e) => setProfitShareFormData({ ...profitShareFormData, period: e.target.value as any })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="monthly">每月</option>
+                      <option value="quarterly">每季</option>
+                      <option value="semi-annual">每半年</option>
+                      <option value="yearly">每年</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">分潤類型 *</label>
+                    <select
+                      required
+                      value={profitShareFormData.profitShareType}
+                      onChange={(e) => setProfitShareFormData({ ...profitShareFormData, profitShareType: e.target.value as ProfitShareType })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="natural">自然分潤</option>
+                      <option value="advertising">廣告分潤</option>
+                      <option value="other">其他</option>
                     </select>
                   </div>
                   <div>
@@ -567,19 +599,6 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
                       onChange={(e) => setProfitShareFormData({ ...profitShareFormData, periodEnd: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">分潤週期 *</label>
-                    <select
-                      value={profitShareFormData.period}
-                      onChange={(e) => setProfitShareFormData({ ...profitShareFormData, period: e.target.value as any })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                    >
-                      <option value="monthly">每月</option>
-                      <option value="quarterly">每季</option>
-                      <option value="semi-annual">每半年</option>
-                      <option value="yearly">每年</option>
-                    </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">銷售金額 (NT$) *</label>
@@ -646,6 +665,7 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
                   {formData.profitShares.map((ps) => {
                     const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
                     const monthDisplay = ps.month ? monthNames[parseInt(ps.month.split('-')[1]) - 1] : '';
+                    const profitShareTypeDisplay = ps.profitShareType === 'natural' ? '自然分潤' : ps.profitShareType === 'advertising' ? '廣告分潤' : '其他';
 
                     return (
                     <div key={ps.id} className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-3">
@@ -661,6 +681,9 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
                           </span>
                           <span className="text-gray-600">
                             分潤周期: {ps.period === 'monthly' ? '每月' : ps.period === 'quarterly' ? '每季' : ps.period === 'semi-annual' ? '每半年' : '每年'}
+                          </span>
+                          <span className="text-purple-600 font-medium">
+                            {profitShareTypeDisplay}
                           </span>
                         </div>
                         <div className="flex items-center gap-4 mt-1 text-sm text-gray-600">

@@ -13,6 +13,9 @@ export type KOLRating = 'S' | 'A' | 'B' | 'C' | 'D';
 // 分潤週期類型
 export type ProfitSharePeriod = 'monthly' | 'quarterly' | 'semi-annual' | 'yearly';
 
+// 分潤類型
+export type ProfitShareType = 'natural' | 'advertising' | 'other';
+
 // 分潤記錄
 export interface ProfitShareRecord {
   id: string; // 唯一識別碼
@@ -20,6 +23,7 @@ export interface ProfitShareRecord {
   kolId: number; // 關聯的 KOL ID
   settlementDate: string; // 結算日期
   period: ProfitSharePeriod; // 分潤週期：每月/每季/每年
+  profitShareType?: ProfitShareType; // 分潤類型：自然分潤/廣告分潤/其他
   periodStart: string; // 開始時間
   periodEnd: string; // 結束時間
   month?: string; // 合作月份 (從 periodStart 自動計算，YYYY-MM 格式)

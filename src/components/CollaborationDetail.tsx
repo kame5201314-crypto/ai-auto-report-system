@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Collaboration, KOL, ProfitShareRecord, Reminder, SalesTracking, ContractStatus } from '../types/kol';
+import { Collaboration, KOL, ProfitShareRecord, Reminder, SalesTracking, ContractStatus, ProfitShareType } from '../types/kol';
 import { ArrowLeft, DollarSign, Calendar, Bell, Plus, Edit2, Trash2, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface CollaborationDetailProps {
@@ -34,6 +34,7 @@ const CollaborationDetail: React.FC<CollaborationDetailProps> = ({
   // 分潤表單資料
   const [profitShareFormData, setProfitShareFormData] = useState({
     period: 'monthly' as any,
+    profitShareType: 'natural' as ProfitShareType,
     periodStart: '',
     periodEnd: '',
     salesAmount: 0,
@@ -63,6 +64,7 @@ const CollaborationDetail: React.FC<CollaborationDetailProps> = ({
     setEditingProfitShare(null);
     setProfitShareFormData({
       period: 'monthly',
+      profitShareType: 'natural',
       periodStart: collaboration.startDate,
       periodEnd: collaboration.endDate,
       salesAmount: 0,
@@ -77,6 +79,7 @@ const CollaborationDetail: React.FC<CollaborationDetailProps> = ({
     setEditingProfitShare(ps);
     setProfitShareFormData({
       period: ps.period,
+      profitShareType: ps.profitShareType || 'natural',
       periodStart: ps.periodStart,
       periodEnd: ps.periodEnd,
       salesAmount: ps.salesAmount,
@@ -343,12 +346,18 @@ const CollaborationDetail: React.FC<CollaborationDetailProps> = ({
               <p className="text-xs text-gray-500 mt-1">{profitShares.length} 筆分潤記錄</p>
             </div>
 
-            {profitShares.map(ps => (
+            {profitShares.map(ps => {
+              const profitShareTypeDisplay = ps.profitShareType === 'natural' ? '自然分潤' : ps.profitShareType === 'advertising' ? '廣告分潤' : '其他';
+
+              return (
               <div key={ps.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <p className="font-semibold text-gray-800">結算日期：{ps.settlementDate}</p>
                     <p className="text-sm text-gray-600">期間：{ps.periodStart} ~ {ps.periodEnd} ({getPeriodText(ps.period)})</p>
+                    {ps.profitShareType && (
+                      <p className="text-sm text-purple-600 font-medium mt-1">{profitShareTypeDisplay}</p>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -387,7 +396,8 @@ const CollaborationDetail: React.FC<CollaborationDetailProps> = ({
                   <p className="text-sm text-gray-600 mt-2 p-2 bg-gray-50 rounded">備註：{ps.note}</p>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <p className="text-gray-500 text-center py-8">尚無分潤記錄</p>
@@ -516,6 +526,19 @@ const CollaborationDetail: React.FC<CollaborationDetailProps> = ({
                       <option value="quarterly">每季</option>
                       <option value="semi-annual">每半年</option>
                       <option value="yearly">每年</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">分潤類型 *</label>
+                    <select
+                      required
+                      value={profitShareFormData.profitShareType}
+                      onChange={(e) => setProfitShareFormData({ ...profitShareFormData, profitShareType: e.target.value as ProfitShareType })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="natural">自然分潤</option>
+                      <option value="advertising">廣告分潤</option>
+                      <option value="other">其他</option>
                     </select>
                   </div>
                   <div>
