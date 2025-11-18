@@ -40,6 +40,13 @@ const KOLDetail: React.FC<KOLDetailProps> = ({ kol, collaborations, salesTrackin
   // 已完成的合作
   const completedCollaborations = collaborations.filter(c => c.status === 'completed');
 
+  // 其他狀態的合作（待確認、已取消等）
+  const otherCollaborations = collaborations.filter(c =>
+    c.status !== 'in_progress' &&
+    c.status !== 'confirmed' &&
+    c.status !== 'completed'
+  );
+
   // 計算該 KOL 所有專案的總分潤
   const getTotalProfitShares = () => {
     let totalRecords = 0;
@@ -518,6 +525,60 @@ const KOLDetail: React.FC<KOLDetailProps> = ({ kol, collaborations, salesTrackin
                       </div>
                     );
                   })}
+                </div>
+              </div>
+            )}
+
+            {/* 其他狀態的合作 */}
+            {otherCollaborations.length > 0 && (
+              <div>
+                <h4 className="text-md font-medium text-gray-700 mb-3">其他 ({otherCollaborations.length})</h4>
+                <div className="space-y-3">
+                  {otherCollaborations.map(collab => (
+                    <div key={collab.id} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h5 className="font-semibold text-gray-800">{collab.projectName}</h5>
+                          <p className="text-sm text-gray-600">{collab.productName}</p>
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(collab.status)}`}>
+                          {getStatusText(collab.status)}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-sm mt-3">
+                        <div>
+                          <span className="text-gray-600">期間:</span>
+                          <span className="ml-2 font-medium">{collab.startDate} ~ {collab.endDate}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">預算:</span>
+                          <span className="ml-2 font-medium text-green-600">NT$ {collab.budget.toLocaleString()}</span>
+                        </div>
+                      </div>
+
+                      {/* 操作按鈕 */}
+                      <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-gray-200">
+                        {onViewCollaboration && (
+                          <button
+                            onClick={() => onViewCollaboration(collab)}
+                            className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-md transition-colors"
+                          >
+                            <FileText size={16} />
+                            查看專案
+                          </button>
+                        )}
+                        {onViewProfitShares && collab.profitShares && collab.profitShares.length > 0 && (
+                          <button
+                            onClick={() => onViewProfitShares(collab)}
+                            className="flex items-center gap-1 px-3 py-1.5 text-sm text-green-700 bg-white hover:bg-green-100 border border-green-300 rounded-md transition-colors"
+                          >
+                            <Wallet size={16} />
+                            查看分潤 ({collab.profitShares.length})
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
