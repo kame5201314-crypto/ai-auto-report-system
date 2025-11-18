@@ -224,7 +224,7 @@ const KOLList: React.FC<KOLListProps> = ({ kols, collaborations, onAddKOL, onEdi
               )}
 
               {/* 操作按鈕 */}
-              <div className="flex gap-3 pt-2">
+              <div className="flex justify-end gap-3 pt-2 mt-auto">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
