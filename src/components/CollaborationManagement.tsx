@@ -329,6 +329,7 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
                 required
                 value={formData.budget}
                 onChange={(e) => setFormData({ ...formData, budget: parseInt(e.target.value) || 0 })}
+                onFocus={(e) => e.target.select()}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -338,6 +339,7 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
                 type="number"
                 value={formData.actualCost}
                 onChange={(e) => setFormData({ ...formData, actualCost: parseInt(e.target.value) || 0 })}
+                onFocus={(e) => e.target.select()}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -567,6 +569,7 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
                       type="number"
                       value={profitShareFormData.salesAmount}
                       onChange={(e) => setProfitShareFormData({ ...profitShareFormData, salesAmount: parseFloat(e.target.value) || 0 })}
+                      onFocus={(e) => e.target.select()}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                     />
                   </div>
@@ -577,6 +580,7 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
                       step="0.1"
                       value={profitShareFormData.profitShareRate}
                       onChange={(e) => setProfitShareFormData({ ...profitShareFormData, profitShareRate: parseFloat(e.target.value) || 0 })}
+                      onFocus={(e) => e.target.select()}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                     />
                   </div>
@@ -586,6 +590,7 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
                       type="number"
                       value={profitShareFormData.bonusAmount}
                       onChange={(e) => setProfitShareFormData({ ...profitShareFormData, bonusAmount: parseFloat(e.target.value) || 0 })}
+                      onFocus={(e) => e.target.select()}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                     />
                   </div>

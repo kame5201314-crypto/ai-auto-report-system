@@ -525,6 +525,7 @@ const CollaborationDetail: React.FC<CollaborationDetailProps> = ({
                       required
                       value={profitShareFormData.salesAmount}
                       onChange={(e) => setProfitShareFormData({ ...profitShareFormData, salesAmount: parseFloat(e.target.value) || 0 })}
+                      onFocus={(e) => e.target.select()}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                     />
                   </div>
@@ -536,6 +537,7 @@ const CollaborationDetail: React.FC<CollaborationDetailProps> = ({
                       step="0.1"
                       value={profitShareFormData.profitShareRate}
                       onChange={(e) => setProfitShareFormData({ ...profitShareFormData, profitShareRate: parseFloat(e.target.value) || 0 })}
+                      onFocus={(e) => e.target.select()}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                     />
                   </div>
@@ -545,6 +547,7 @@ const CollaborationDetail: React.FC<CollaborationDetailProps> = ({
                       type="number"
                       value={profitShareFormData.bonusAmount}
                       onChange={(e) => setProfitShareFormData({ ...profitShareFormData, bonusAmount: parseFloat(e.target.value) || 0 })}
+                      onFocus={(e) => e.target.select()}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                     />
                   </div>
