@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { KOL, Collaboration, SalesTracking, KOLRating } from '../types/kol';
-import { ArrowLeft, Edit, Mail, Phone, MapPin, Star, Youtube, Facebook, Instagram, Twitter, TrendingUp, DollarSign, Eye, Heart, MessageCircle, Share2 } from 'lucide-react';
+import { ArrowLeft, Edit, Mail, Phone, MapPin, Star, Youtube, Facebook, Instagram, Twitter, TrendingUp, DollarSign, Eye, Heart, MessageCircle, Share2, FileText, Wallet } from 'lucide-react';
 import { FaTiktok, FaLine } from 'react-icons/fa';
 
 interface KOLDetailProps {
@@ -9,9 +9,11 @@ interface KOLDetailProps {
   salesTracking: SalesTracking[];
   onEdit: () => void;
   onBack: () => void;
+  onViewCollaboration?: (collab: Collaboration) => void;
+  onViewProfitShares?: (collab: Collaboration) => void;
 }
 
-const KOLDetail: React.FC<KOLDetailProps> = ({ kol, collaborations, salesTracking, onEdit, onBack }) => {
+const KOLDetail: React.FC<KOLDetailProps> = ({ kol, collaborations, salesTracking, onEdit, onBack, onViewCollaboration, onViewProfitShares }) => {
   // 取得評級樣式
   const getRatingStyle = (rating: KOLRating) => {
     const styles = {
@@ -416,6 +418,28 @@ const KOLDetail: React.FC<KOLDetailProps> = ({ kol, collaborations, salesTrackin
                           ))}
                         </div>
                       </div>
+
+                      {/* 操作按鈕 */}
+                      <div className="flex gap-2 mt-4 pt-3 border-t border-blue-200">
+                        {onViewCollaboration && (
+                          <button
+                            onClick={() => onViewCollaboration(collab)}
+                            className="flex items-center gap-1 px-3 py-1.5 text-sm text-blue-700 bg-white hover:bg-blue-100 border border-blue-300 rounded-md transition-colors"
+                          >
+                            <FileText size={16} />
+                            查看專案
+                          </button>
+                        )}
+                        {onViewProfitShares && collab.profitShares && collab.profitShares.length > 0 && (
+                          <button
+                            onClick={() => onViewProfitShares(collab)}
+                            className="flex items-center gap-1 px-3 py-1.5 text-sm text-green-700 bg-white hover:bg-green-100 border border-green-300 rounded-md transition-colors"
+                          >
+                            <Wallet size={16} />
+                            查看分潤 ({collab.profitShares.length})
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -469,6 +493,28 @@ const KOLDetail: React.FC<KOLDetailProps> = ({ kol, collaborations, salesTrackin
                             </div>
                           </div>
                         )}
+
+                        {/* 操作按鈕 */}
+                        <div className="flex gap-2 mt-4 pt-3 border-t border-gray-200">
+                          {onViewCollaboration && (
+                            <button
+                              onClick={() => onViewCollaboration(collab)}
+                              className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-md transition-colors"
+                            >
+                              <FileText size={16} />
+                              查看專案
+                            </button>
+                          )}
+                          {onViewProfitShares && collab.profitShares && collab.profitShares.length > 0 && (
+                            <button
+                              onClick={() => onViewProfitShares(collab)}
+                              className="flex items-center gap-1 px-3 py-1.5 text-sm text-green-700 bg-white hover:bg-green-100 border border-green-300 rounded-md transition-colors"
+                            >
+                              <Wallet size={16} />
+                              查看分潤 ({collab.profitShares.length})
+                            </button>
+                          )}
+                        </div>
                       </div>
                     );
                   })}

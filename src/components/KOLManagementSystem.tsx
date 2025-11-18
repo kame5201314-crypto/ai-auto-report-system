@@ -328,6 +328,14 @@ const KOLManagementSystem = () => {
             salesTracking={salesTracking.filter(s => s.kolId === selectedKOL.id)}
             onEdit={() => handleEditKOL(selectedKOL)}
             onBack={() => setCurrentView('list')}
+            onViewCollaboration={(collab) => {
+              setCurrentView('collaborations');
+              // 這裡可以設置一個狀態來直接顯示該合作專案的詳情
+            }}
+            onViewProfitShares={(collab) => {
+              setCurrentView('collaborations');
+              // 這裡可以設置一個狀態來顯示該合作專案的分潤記錄
+            }}
           />
         )}
 
