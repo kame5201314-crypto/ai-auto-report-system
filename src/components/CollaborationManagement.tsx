@@ -643,15 +643,24 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
               <div className="space-y-2 mb-4">
                 <h4 className="font-medium text-gray-700">已新增的分潤記錄 ({formData.profitShares.length} 筆)</h4>
                 <div className="space-y-2">
-                  {formData.profitShares.map((ps) => (
+                  {formData.profitShares.map((ps) => {
+                    const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+                    const monthDisplay = ps.month ? monthNames[parseInt(ps.month.split('-')[1]) - 1] : '';
+
+                    return (
                     <div key={ps.id} className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 text-sm">
+                          {monthDisplay && (
+                            <span className="font-semibold text-blue-700">
+                              月份: {monthDisplay}
+                            </span>
+                          )}
                           <span className="font-semibold text-gray-700">
                             {ps.periodStart} ~ {ps.periodEnd}
                           </span>
-                          <span className="px-2 py-0.5 bg-green-600 text-white text-xs rounded">
-                            {ps.period === 'monthly' ? '每月' : ps.period === 'quarterly' ? '每季' : ps.period === 'semi-annual' ? '每半年' : '每年'}
+                          <span className="text-gray-600">
+                            分潤周期: {ps.period === 'monthly' ? '每月' : ps.period === 'quarterly' ? '每季' : ps.period === 'semi-annual' ? '每半年' : '每年'}
                           </span>
                         </div>
                         <div className="flex items-center gap-4 mt-1 text-sm text-gray-600">
@@ -682,7 +691,8 @@ const CollaborationManagement: React.FC<CollaborationManagementProps> = ({
                         </button>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
