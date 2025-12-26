@@ -349,9 +349,18 @@ export const imageGuardianApi = new ImageGuardianApiClient();
 
 export async function checkApiAvailability(): Promise<boolean> {
   try {
-    await imageGuardianApi.healthCheck();
-    return true;
-  } catch {
+    // 添加 3 秒超時，避免長時間等待
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+    const response = await fetch(`${API_BASE_URL}/api/health`, {
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+    return response.ok;
+  } catch (error) {
+    console.log('[API] 後端不可用，使用本地模式');
     return false;
   }
 }

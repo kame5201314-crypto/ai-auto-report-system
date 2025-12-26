@@ -284,8 +284,8 @@ export const assetService = {
 
         return asset;
       } catch (error) {
-        console.error('[Asset] 上傳失敗:', error);
-        throw error;
+        console.warn('[Asset] 後端上傳失敗，降級使用本地模式:', error);
+        // 不拋出錯誤，繼續執行本地模式
       }
     }
 
