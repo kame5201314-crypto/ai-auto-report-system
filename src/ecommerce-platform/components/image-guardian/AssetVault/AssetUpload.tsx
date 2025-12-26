@@ -94,7 +94,7 @@ const AssetUpload: React.FC<AssetUploadProps> = ({
     setPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
-  const simulateUpload = async (): Promise<DigitalAsset[]> => {
+  const processUpload = async (): Promise<DigitalAsset[]> => {
     const uploadedAssets: DigitalAsset[] = [];
     const tagList = tags.split(',').map(t => t.trim()).filter(t => t);
 
@@ -110,7 +110,7 @@ const AssetUpload: React.FC<AssetUploadProps> = ({
 
       // 模擬上傳進度
       for (let p = 0; p <= 50; p += 10) {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 50));
         setUploadProgress(prev => {
           const newProgress = [...prev];
           newProgress[i] = { ...newProgress[i], progress: p };
@@ -125,53 +125,31 @@ const AssetUpload: React.FC<AssetUploadProps> = ({
         return newProgress;
       });
 
-      // 模擬指紋計算
-      for (let p = 50; p <= 100; p += 10) {
-        await new Promise(resolve => setTimeout(resolve, 150));
-        setUploadProgress(prev => {
-          const newProgress = [...prev];
-          newProgress[i] = { ...newProgress[i], progress: p };
-          return newProgress;
-        });
-      }
-
-      // 建立資產
-      const newAsset = imageGuardianService.assets.create({
-        userId: 'user-001',
-        fileName: file.name,
-        originalUrl: previews[i] || '',
-        thumbnailUrl: previews[i] || '',
-        fileSize: file.size,
-        dimensions: { width: 1920, height: 1080 }, // 模擬尺寸
-        fingerprint: {
-          pHash: Math.random().toString(36).substring(2, 18),
-          orbDescriptors: 'mock_orb_data',
-          colorHistogram: 'mock_histogram',
-          featureCount: Math.floor(Math.random() * 500) + 100
-        },
-        metadata: {
-          uploadedBy: 'admin',
-          uploadedAt: new Date().toISOString(),
+      try {
+        // 使用服務的 upload 函數（會自動壓縮圖片）
+        const newAsset = await imageGuardianService.assets.upload(file, {
           tags: tagList,
           description,
           productSku: productSku || undefined,
           brandName: brandName || undefined
-        },
-        status: 'indexed',
-        scanStats: {
-          totalScans: 0,
-          violationsFound: 0
-        }
-      });
+        });
 
-      uploadedAssets.push(newAsset);
+        uploadedAssets.push(newAsset);
 
-      // 更新進度：完成
-      setUploadProgress(prev => {
-        const newProgress = [...prev];
-        newProgress[i] = { ...newProgress[i], status: 'completed', progress: 100 };
-        return newProgress;
-      });
+        // 更新進度：完成
+        setUploadProgress(prev => {
+          const newProgress = [...prev];
+          newProgress[i] = { ...newProgress[i], status: 'completed', progress: 100 };
+          return newProgress;
+        });
+      } catch (error) {
+        console.error(`上傳檔案 ${file.name} 失敗:`, error);
+        setUploadProgress(prev => {
+          const newProgress = [...prev];
+          newProgress[i] = { ...newProgress[i], status: 'failed', progress: 0 };
+          return newProgress;
+        });
+      }
     }
 
     return uploadedAssets;
@@ -188,8 +166,12 @@ const AssetUpload: React.FC<AssetUploadProps> = ({
     })));
 
     try {
-      const uploadedAssets = await simulateUpload();
-      onUploadComplete(uploadedAssets);
+      const uploadedAssets = await processUpload();
+      if (uploadedAssets.length > 0) {
+        onUploadComplete(uploadedAssets);
+      } else {
+        alert('上傳失敗，請稍後再試');
+      }
     } catch (error) {
       console.error('Upload failed:', error);
       alert('上傳失敗，請稍後再試');

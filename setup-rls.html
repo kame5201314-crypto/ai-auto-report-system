@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase RLS 設定工具</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        .status { padding: 15px; border-radius: 5px; margin: 15px 0; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #cce5ff; color: #004085; }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover { background: #45a049; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        #log { background: #1e1e1e; color: #00ff00; padding: 15px; border-radius: 5px; font-family: monospace; max-height: 400px; overflow-y: auto; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Supabase RLS 設定工具</h1>
+        <p>此工具將自動設定 Supabase 的 Row Level Security (RLS) 政策，讓 KOL 管理系統可以正常存取資料庫。</p>
+
+        <div class="status info">
+            <strong>注意：</strong>您需要提供 Supabase 的 Service Role Key（不是 anon key）才能執行 RLS 設定。
+        </div>
+
+        <div style="margin: 20px 0;">
+            <label><strong>Service Role Key:</strong></label><br>
+            <input type="password" id="serviceKey" style="width: 100%; padding: 10px; margin-top: 5px; font-size: 14px;" placeholder="請輸入您的 service_role key（在 Supabase Dashboard > Settings > API 中找到）">
+        </div>
+
+        <button onclick="testConnection()">1. 測試連線</button>
+        <button onclick="checkData()">2. 檢查資料</button>
+        <button onclick="setupRLS()" id="setupBtn" disabled>3. 設定 RLS（需先測試連線）</button>
+
+        <h3>執行記錄：</h3>
+        <div id="log">等待操作...</div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://rfrffizseufnhqusrpdg.supabase.co';
+        const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJmcmZmaXpzZXVmbmhxdXNycGRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NDU1MzgsImV4cCI6MjA3ODUyMTUzOH0.cCPID8j-io11M1hn1_vuUe-O5WQcOza0_kewW_XEpA8';
+
+        let supabaseAdmin = null;
+
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            logDiv.textContent += `[${time}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        async function testConnection() {
+            const serviceKey = document.getElementById('serviceKey').value;
+            if (!serviceKey) {
+                alert('請輸入 Service Role Key');
+                return;
+            }
+
+            log('正在測試連線...');
+
+            try {
+                supabaseAdmin = supabase.createClient(SUPABASE_URL, serviceKey);
+
+                // 嘗試讀取 kols 表格
+                const { data, error } = await supabaseAdmin.from('kols').select('count');
+
+                if (error) {
+                    log('❌ 連線失敗: ' + error.message);
+                    return;
+                }
+
+                log('✅ 連線成功！');
+                document.getElementById('setupBtn').disabled = false;
+            } catch (err) {
+                log('❌ 連線錯誤: ' + err.message);
+            }
+        }
+
+        async function checkData() {
+            log('正在檢查資料...');
+
+            try {
+                // 使用 anon key 測試
+                const client = supabase.createClient(SUPABASE_URL, ANON_KEY);
+
+                const { data: kols, error: kolError } = await client.from('kols').select('id, name');
+
+                if (kolError) {
+                    log('❌ 無法讀取 KOL 資料: ' + kolError.message);
+                    log('這表示 RLS 政策可能阻止了匿名讀取');
+                } else {
+                    log('✅ 成功讀取 KOL 資料: ' + (kols?.length || 0) + ' 筆');
+                    if (kols && kols.length > 0) {
+                        kols.forEach(k => log('   - ' + k.name));
+                    }
+                }
+
+                const { data: collabs, error: collabError } = await client.from('collaborations').select('id, project_name');
+
+                if (collabError) {
+                    log('❌ 無法讀取合作專案: ' + collabError.message);
+                } else {
+                    log('✅ 成功讀取合作專案: ' + (collabs?.length || 0) + ' 筆');
+                }
+            } catch (err) {
+                log('❌ 檢查錯誤: ' + err.message);
+            }
+        }
+
+        async function setupRLS() {
+            if (!supabaseAdmin) {
+                alert('請先測試連線');
+                return;
+            }
+
+            log('');
+            log('========================================');
+            log('開始設定 RLS 政策...');
+            log('========================================');
+
+            const sqlStatements = [
+                // kols 表格
+                `DROP POLICY IF EXISTS "公開讀取 KOL 資料" ON kols`,
+                `DROP POLICY IF EXISTS "公開新增 KOL" ON kols`,
+                `DROP POLICY IF EXISTS "公開更新 KOL" ON kols`,
+                `DROP POLICY IF EXISTS "公開刪除 KOL" ON kols`,
+                `CREATE POLICY "公開讀取 KOL 資料" ON kols FOR SELECT USING (true)`,
+                `CREATE POLICY "公開新增 KOL" ON kols FOR INSERT WITH CHECK (true)`,
+                `CREATE POLICY "公開更新 KOL" ON kols FOR UPDATE USING (true)`,
+                `CREATE POLICY "公開刪除 KOL" ON kols FOR DELETE USING (true)`,
+
+                // collaborations 表格
+                `DROP POLICY IF EXISTS "公開讀取合作專案" ON collaborations`,
+                `DROP POLICY IF EXISTS "公開新增合作專案" ON collaborations`,
+                `DROP POLICY IF EXISTS "公開更新合作專案" ON collaborations`,
+                `DROP POLICY IF EXISTS "公開刪除合作專案" ON collaborations`,
+                `CREATE POLICY "公開讀取合作專案" ON collaborations FOR SELECT USING (true)`,
+                `CREATE POLICY "公開新增合作專案" ON collaborations FOR INSERT WITH CHECK (true)`,
+                `CREATE POLICY "公開更新合作專案" ON collaborations FOR UPDATE USING (true)`,
+                `CREATE POLICY "公開刪除合作專案" ON collaborations FOR DELETE USING (true)`,
+            ];
+
+            for (const sql of sqlStatements) {
+                try {
+                    const { error } = await supabaseAdmin.rpc('exec_sql', { sql_query: sql });
+                    if (error) {
+                        // 如果 rpc 不存在，嘗試直接執行
+                        log('⚠️ RPC 方法不可用，請手動執行 SQL');
+                        break;
+                    }
+                    log('✅ ' + sql.substring(0, 50) + '...');
+                } catch (err) {
+                    log('⚠️ ' + err.message);
+                }
+            }
+
+            log('');
+            log('========================================');
+            log('請手動在 Supabase SQL Editor 執行以下 SQL：');
+            log('========================================');
+            log('');
+            log(`-- kols 表格
+DROP POLICY IF EXISTS "公開讀取 KOL 資料" ON kols;
+CREATE POLICY "公開讀取 KOL 資料" ON kols FOR SELECT USING (true);
+CREATE POLICY "公開新增 KOL" ON kols FOR INSERT WITH CHECK (true);
+CREATE POLICY "公開更新 KOL" ON kols FOR UPDATE USING (true);
+CREATE POLICY "公開刪除 KOL" ON kols FOR DELETE USING (true);
+
+-- collaborations 表格
+DROP POLICY IF EXISTS "公開讀取合作專案" ON collaborations;
+CREATE POLICY "公開讀取合作專案" ON collaborations FOR SELECT USING (true);
+CREATE POLICY "公開新增合作專案" ON collaborations FOR INSERT WITH CHECK (true);
+CREATE POLICY "公開更新合作專案" ON collaborations FOR UPDATE USING (true);
+CREATE POLICY "公開刪除合作專案" ON collaborations FOR DELETE USING (true);`);
+
+            log('');
+            log('完成後請重新整理 KOL 管理系統頁面');
+        }
+    </script>
+</body>
+</html>

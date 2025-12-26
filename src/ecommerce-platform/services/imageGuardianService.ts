@@ -99,11 +99,31 @@ function getFromStorage<T>(key: string, defaultValue: T): T {
   }
 }
 
-function saveToStorage<T>(key: string, data: T): void {
+function saveToStorage<T>(key: string, data: T): boolean {
   try {
-    localStorage.setItem(key, JSON.stringify(data));
+    const jsonData = JSON.stringify(data);
+    console.log(`[Storage] 儲存 ${key}, 大小: ${Math.round(jsonData.length / 1024)}KB`);
+    localStorage.setItem(key, jsonData);
+    return true;
   } catch (error) {
-    console.error(`Failed to save to storage: ${key}`, error);
+    console.error(`[Storage] 儲存失敗 ${key}:`, error);
+    // 如果是 QuotaExceededError，嘗試清理舊數據
+    if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+      console.warn('[Storage] localStorage 容量已滿，嘗試清理...');
+      // 清理最舊的掃描任務
+      try {
+        const tasks = getFromStorage<unknown[]>(STORAGE_KEYS.SCAN_TASKS, []);
+        if (tasks.length > 10) {
+          saveToStorage(STORAGE_KEYS.SCAN_TASKS, tasks.slice(-10));
+        }
+        // 再次嘗試儲存
+        localStorage.setItem(key, JSON.stringify(data));
+        return true;
+      } catch {
+        console.error('[Storage] 清理後仍無法儲存');
+      }
+    }
+    return false;
   }
 }
 
@@ -124,9 +144,47 @@ async function fileToDataUrl(file: File): Promise<string> {
 /** 獲取圖片尺寸 */
 async function getImageDimensions(dataUrl: string): Promise<{ width: number; height: number }> {
   return new Promise((resolve) => {
-    const img = new Image();
+    const img = new window.Image();
     img.onload = () => resolve({ width: img.width, height: img.height });
     img.onerror = () => resolve({ width: 0, height: 0 });
+    img.src = dataUrl;
+  });
+}
+
+/** 壓縮圖片為縮圖（用於 localStorage，最大 150x150） */
+async function compressImageToThumbnail(dataUrl: string, maxSize: number = 150): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let { width, height } = img;
+
+      // 計算縮放比例
+      if (width > height) {
+        if (width > maxSize) {
+          height = Math.round(height * maxSize / width);
+          width = maxSize;
+        }
+      } else {
+        if (height > maxSize) {
+          width = Math.round(width * maxSize / height);
+          height = maxSize;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0, width, height);
+        // 使用 JPEG 壓縮，品質 0.6
+        resolve(canvas.toDataURL('image/jpeg', 0.6));
+      } else {
+        resolve(dataUrl);
+      }
+    };
+    img.onerror = () => resolve(dataUrl);
     img.src = dataUrl;
   });
 }
@@ -231,15 +289,19 @@ export const assetService = {
       }
     }
 
-    // 本地模式：創建資產並儲存 base64 圖片
+    // 本地模式：創建資產並儲存壓縮後的縮圖
+    console.log('[Asset] 使用本地模式上傳...');
     const dataUrl = await fileToDataUrl(file);
     const dimensions = await getImageDimensions(dataUrl);
+    // 壓縮圖片以減少 localStorage 佔用
+    const thumbnailUrl = await compressImageToThumbnail(dataUrl, 200);
+    console.log(`[Asset] 原始大小: ${Math.round(dataUrl.length / 1024)}KB, 縮圖大小: ${Math.round(thumbnailUrl.length / 1024)}KB`);
 
     return this.create({
       userId: 'user-001',
       fileName: file.name,
-      originalUrl: dataUrl,
-      thumbnailUrl: dataUrl,
+      originalUrl: thumbnailUrl, // 使用壓縮後的縮圖
+      thumbnailUrl: thumbnailUrl,
       fileSize: file.size,
       dimensions,
       fingerprint: {

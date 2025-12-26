@@ -1,0 +1,95 @@
+# ====================================
+# PR 自動檢查
+# ====================================
+#
+# 確保 PR 符合資安規範才能合併
+
+name: PR 檢查
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  # ============================================
+  # PR 規範檢查
+  # ============================================
+  pr-validation:
+    name: PR 規範檢查
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 檢出程式碼
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 檢查 PR 標題格式
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          echo "PR 標題: $PR_TITLE"
+
+          # 檢查是否有合理的前綴
+          if [[ ! "$PR_TITLE" =~ ^(feat|fix|docs|style|refactor|test|chore|security): ]]; then
+            echo "::warning::建議 PR 標題使用標準格式 (feat/fix/docs/style/refactor/test/chore/security):"
+          fi
+
+      - name: 檢查敏感檔案變更
+        run: |
+          echo "檢查是否有敏感檔案被修改..."
+
+          # 取得變更的檔案
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+
+          # 檢查敏感檔案
+          SENSITIVE_PATTERNS=(".env" "credentials" "secret" "password" "api_key" "apikey")
+
+          for pattern in "${SENSITIVE_PATTERNS[@]}"; do
+            MATCHES=$(echo "$CHANGED_FILES" | grep -i "$pattern" || true)
+            if [ -n "$MATCHES" ]; then
+              echo "::error::發現可能包含敏感資訊的檔案變更: $MATCHES"
+              exit 1
+            fi
+          done
+
+          echo "✅ 未發現敏感檔案變更"
+
+      - name: 檢查 .gitignore 完整性
+        run: |
+          echo "檢查 .gitignore 是否包含必要規則..."
+
+          REQUIRED_PATTERNS=(".env" "node_modules" "*.key" "*.pem")
+
+          for pattern in "${REQUIRED_PATTERNS[@]}"; do
+            if ! grep -q "$pattern" .gitignore; then
+              echo "::warning::.gitignore 建議加入: $pattern"
+            fi
+          done
+
+          echo "✅ .gitignore 檢查完成"
+
+  # ============================================
+  # 測試必須通過
+  # ============================================
+  tests-required:
+    name: 測試驗證
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 檢出程式碼
+        uses: actions/checkout@v4
+
+      - name: 設定 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+
+      - name: 安裝依賴
+        run: npm ci
+
+      - name: 執行測試
+        run: npm test
+
+      - name: 建構驗證
+        run: npm run build

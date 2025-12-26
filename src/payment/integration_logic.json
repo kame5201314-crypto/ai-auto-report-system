@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vibe-pay-integration",
+  "title": "Vibe-Pay 整合邏輯配置",
+  "description": "提供給 AI 助手自動產生結帳程式碼的配置檔",
+  "version": "1.0.0",
+
+  "system": {
+    "name": "Vibe-Pay",
+    "provider": "NewebPay (藍新金流)",
+    "supportedFrameworks": ["React", "Vue", "Next.js", "Express", "Fastify"],
+    "database": "Supabase (PostgreSQL)"
+  },
+
+  "endpoints": {
+    "singlePayment": {
+      "method": "POST",
+      "path": "/api/v1/payment/single",
+      "description": "單次付款 - 產生自動提交的付款表單",
+      "request": {
+        "contentType": "application/json",
+        "required": ["amount", "itemDesc", "email"],
+        "optional": ["userId", "paymentMethods", "returnUrl", "notifyUrl", "clientBackUrl"],
+        "schema": {
+          "amount": { "type": "integer", "min": 1, "description": "金額(整數，新台幣)" },
+          "itemDesc": { "type": "string", "maxLength": 50, "description": "商品描述" },
+          "email": { "type": "string", "format": "email", "description": "付款人 Email" },
+          "paymentMethods": { "type": "array", "items": "PaymentMethod", "description": "付款方式" }
+        }
+      },
+      "response": {
+        "success": {
+          "merchantOrderNo": "string - 訂單編號",
+          "formHtml": "string - 自動提交的 HTML 表單",
+          "actionUrl": "string - 藍新閘道 URL"
+        }
+      }
+    },
+
+    "subscribe": {
+      "method": "POST",
+      "path": "/api/v1/payment/subscribe",
+      "description": "定期定額訂閱",
+      "request": {
+        "required": ["userId", "amount", "itemDesc", "email", "periodType", "periodPoint", "totalPeriods"],
+        "schema": {
+          "userId": { "type": "string", "description": "用戶 UUID" },
+          "amount": { "type": "integer", "min": 1, "description": "每期金額" },
+          "periodType": { "type": "enum", "values": ["D", "W", "M", "Y"], "description": "週期類型" },
+          "periodPoint": { "type": "string", "description": "扣款時間點" },
+          "totalPeriods": { "type": "integer", "min": 2, "max": 99, "description": "總期數" }
+        }
+      }
+    },
+
+    "webhook": {
+      "method": "POST",
+      "path": "/api/payment-callback",
+      "description": "藍新付款結果回呼",
+      "security": {
+        "ipWhitelist": ["175.99.72.0/24", "61.219.166.0/24"],
+        "signatureVerification": "SHA256(HashKey + TradeInfo + HashIV)"
+      }
+    }
+  },
+
+  "paymentMethods": {
+    "CREDIT": { "name": "信用卡", "icon": "💳", "realtime": true },
+    "WEBATM": { "name": "網路ATM", "icon": "🏧", "realtime": true },
+    "VACC": { "name": "ATM轉帳", "icon": "🏦", "realtime": false },
+    "CVS": { "name": "超商代碼", "icon": "🏪", "realtime": false },
+    "BARCODE": { "name": "超商條碼", "icon": "📊", "realtime": false },
+    "LINEPAY": { "name": "LINE Pay", "icon": "💚", "realtime": true },
+    "TAIWANPAY": { "name": "台灣Pay", "icon": "🇹🇼", "realtime": true }
+  },
+
+  "subscriptionStates": {
+    "pending": { "label": "待授權", "color": "#FFA500", "canTransition": ["active", "cancelled"] },
+    "active": { "label": "活躍中", "color": "#00C853", "canTransition": ["past_due", "suspended", "cancelled", "expired"] },
+    "past_due": { "label": "逾期", "color": "#FF5722", "canTransition": ["active", "cancelled"] },
+    "suspended": { "label": "暫停中", "color": "#9E9E9E", "canTransition": ["active", "cancelled"] },
+    "cancelled": { "label": "已取消", "color": "#F44336", "canTransition": [] },
+    "expired": { "label": "已到期", "color": "#607D8B", "canTransition": [] }
+  },
+
+  "codeTemplates": {
+    "checkoutButton": {
+      "description": "結帳按鈕元件",
+      "react": "```tsx\nimport { useState } from 'react';\n\ninterface CheckoutButtonProps {\n  amount: number;\n  itemDesc: string;\n  userEmail: string;\n  onSuccess?: () => void;\n  onError?: (error: string) => void;\n}\n\nexport function CheckoutButton({\n  amount,\n  itemDesc,\n  userEmail,\n  onSuccess,\n  onError\n}: CheckoutButtonProps) {\n  const [loading, setLoading] = useState(false);\n\n  const handleCheckout = async () => {\n    setLoading(true);\n    try {\n      const response = await fetch('/api/v1/payment/single', {\n        method: 'POST',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({\n          amount,\n          itemDesc,\n          email: userEmail\n        })\n      });\n\n      const result = await response.json();\n\n      if (result.success) {\n        // 插入自動提交表單\n        const container = document.createElement('div');\n        container.innerHTML = result.data.formHtml;\n        document.body.appendChild(container);\n        onSuccess?.();\n      } else {\n        onError?.(result.error?.message || '付款失敗');\n      }\n    } catch (error) {\n      onError?.(error instanceof Error ? error.message : '網路錯誤');\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  return (\n    <button\n      onClick={handleCheckout}\n      disabled={loading}\n      className=\"checkout-btn\"\n    >\n      {loading ? '處理中...' : `付款 NT$ ${amount.toLocaleString()}`}\n    </button>\n  );\n}\n```",
+      "vue": "```vue\n<template>\n  <button\n    @click=\"handleCheckout\"\n    :disabled=\"loading\"\n    class=\"checkout-btn\"\n  >\n    {{ loading ? '處理中...' : `付款 NT$ ${amount.toLocaleString()}` }}\n  </button>\n</template>\n\n<script setup lang=\"ts\">\nimport { ref } from 'vue';\n\nconst props = defineProps<{\n  amount: number;\n  itemDesc: string;\n  userEmail: string;\n}>();\n\nconst emit = defineEmits<{\n  success: [];\n  error: [message: string];\n}>();\n\nconst loading = ref(false);\n\nasync function handleCheckout() {\n  loading.value = true;\n  try {\n    const response = await fetch('/api/v1/payment/single', {\n      method: 'POST',\n      headers: { 'Content-Type': 'application/json' },\n      body: JSON.stringify({\n        amount: props.amount,\n        itemDesc: props.itemDesc,\n        email: props.userEmail\n      })\n    });\n\n    const result = await response.json();\n\n    if (result.success) {\n      const container = document.createElement('div');\n      container.innerHTML = result.data.formHtml;\n      document.body.appendChild(container);\n      emit('success');\n    } else {\n      emit('error', result.error?.message || '付款失敗');\n    }\n  } catch (error) {\n    emit('error', error instanceof Error ? error.message : '網路錯誤');\n  } finally {\n    loading.value = false;\n  }\n}\n</script>\n```"
+    },
+
+    "subscribeButton": {
+      "description": "訂閱按鈕元件",
+      "react": "```tsx\nimport { useState } from 'react';\n\ninterface SubscribeButtonProps {\n  userId: string;\n  planName: string;\n  amount: number;\n  periodType: 'D' | 'W' | 'M' | 'Y';\n  periodPoint: string;\n  totalPeriods: number;\n  userEmail: string;\n}\n\nexport function SubscribeButton({\n  userId,\n  planName,\n  amount,\n  periodType,\n  periodPoint,\n  totalPeriods,\n  userEmail\n}: SubscribeButtonProps) {\n  const [loading, setLoading] = useState(false);\n\n  const periodLabels = { D: '日', W: '週', M: '月', Y: '年' };\n\n  const handleSubscribe = async () => {\n    setLoading(true);\n    try {\n      const response = await fetch('/api/v1/payment/subscribe', {\n        method: 'POST',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({\n          userId,\n          amount,\n          itemDesc: planName,\n          email: userEmail,\n          periodType,\n          periodPoint,\n          totalPeriods\n        })\n      });\n\n      const result = await response.json();\n\n      if (result.success) {\n        const container = document.createElement('div');\n        container.innerHTML = result.data.formHtml;\n        document.body.appendChild(container);\n      }\n    } catch (error) {\n      console.error('訂閱失敗:', error);\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  return (\n    <button onClick={handleSubscribe} disabled={loading}>\n      {loading ? '處理中...' : `訂閱 ${planName} (NT$ ${amount}/${periodLabels[periodType]})`}\n    </button>\n  );\n}\n```"
+    },
+
+    "apiRoute": {
+      "description": "API 路由處理器",
+      "nextjs": "```typescript\n// app/api/v1/payment/single/route.ts\nimport { NextRequest, NextResponse } from 'next/server';\nimport { initializeVibePay } from '@/payment';\nimport { createClient } from '@supabase/supabase-js';\n\nconst supabase = createClient(\n  process.env.VITE_SUPABASE_URL!,\n  process.env.SUPABASE_SERVICE_ROLE_KEY!\n);\n\nconst vibePay = initializeVibePay(supabase);\n\nexport async function POST(request: NextRequest) {\n  const body = await request.json();\n  const requestId = crypto.randomUUID();\n\n  const result = await vibePay.api.handleSinglePayment(body, requestId);\n\n  return NextResponse.json(result, {\n    status: result.success ? 200 : 400\n  });\n}\n```",
+      "express": "```typescript\n// routes/payment.ts\nimport { Router } from 'express';\nimport { initializeVibePay } from '../payment';\nimport { supabase } from '../lib/supabase';\n\nconst router = Router();\nconst vibePay = initializeVibePay(supabase);\n\nrouter.post('/single', async (req, res) => {\n  const result = await vibePay.api.handleSinglePayment(req.body);\n  res.status(result.success ? 200 : 400).json(result);\n});\n\nrouter.post('/subscribe', async (req, res) => {\n  const result = await vibePay.api.handleSubscribe(req.body);\n  res.status(result.success ? 200 : 400).json(result);\n});\n\nrouter.post('/callback', async (req, res) => {\n  const result = await vibePay.api.handlePaymentCallback(req.body, req.ip);\n  res.status(result.success ? 200 : 400).json(result);\n});\n\nexport default router;\n```"
+    },
+
+    "webhookHandler": {
+      "description": "Webhook 處理器",
+      "nextjs": "```typescript\n// app/api/payment-callback/route.ts\nimport { NextRequest, NextResponse } from 'next/server';\nimport { initializeVibePay } from '@/payment';\nimport { createClient } from '@supabase/supabase-js';\n\nconst supabase = createClient(\n  process.env.VITE_SUPABASE_URL!,\n  process.env.SUPABASE_SERVICE_ROLE_KEY!\n);\n\nconst vibePay = initializeVibePay(supabase);\n\nexport async function POST(request: NextRequest) {\n  const body = await request.json();\n  const clientIP = request.headers.get('x-forwarded-for') ||\n                   request.headers.get('x-real-ip') ||\n                   '127.0.0.1';\n\n  const result = await vibePay.api.handlePaymentCallback(body, clientIP);\n\n  return NextResponse.json(result);\n}\n```"
+    }
+  },
+
+  "aiInstructions": {
+    "whenGeneratingCode": [
+      "金額 (amount) 必須是正整數，不接受小數",
+      "商品描述 (itemDesc) 最多 50 字元",
+      "Email 為必填欄位",
+      "訂閱必須提供 userId",
+      "periodPoint 格式依 periodType 而定：D=無限制, W=1-7, M=1-31, Y=MMDD",
+      "使用 document.body.insertAdjacentHTML 插入表單",
+      "表單會自動提交，無需手動處理"
+    ],
+    "securityNotes": [
+      "永遠驗證 Webhook 來源 IP",
+      "永遠驗證 TradeSha 簽名",
+      "不要在前端暴露 HashKey/HashIV",
+      "使用 HTTPS 傳輸所有請求",
+      "實作 CSRF 保護"
+    ],
+    "errorHandling": [
+      "檢查 response.success 狀態",
+      "處理網路錯誤 (try-catch)",
+      "顯示友善的錯誤訊息給用戶",
+      "記錄錯誤到日誌系統"
+    ]
+  },
+
+  "testCredentials": {
+    "note": "僅供測試環境使用，請勿用於正式環境",
+    "sandbox": {
+      "url": "https://ccore.newebpay.com/MPG/mpg_gateway",
+      "merchantId": "請至藍新測試後台申請",
+      "hashKeyLength": 32,
+      "hashIVLength": 16
+    },
+    "testCards": [
+      { "number": "4000-2211-1111-1111", "expiry": "任意未來日期", "cvv": "任意3碼", "result": "成功" },
+      { "number": "4000-2222-2222-2222", "expiry": "任意未來日期", "cvv": "任意3碼", "result": "失敗" }
+    ]
+  }
+}
