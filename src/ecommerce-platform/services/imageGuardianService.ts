@@ -111,6 +111,26 @@ function generateId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 }
 
+/** 將檔案轉換為 base64 Data URL（用於本地儲存） */
+async function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/** 獲取圖片尺寸 */
+async function getImageDimensions(dataUrl: string): Promise<{ width: number; height: number }> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve({ width: img.width, height: img.height });
+    img.onerror = () => resolve({ width: 0, height: 0 });
+    img.src = dataUrl;
+  });
+}
+
 // ==================== 資產服務 (Asset Service) ====================
 
 /** 將後端資產回應轉換為前端格式 */
@@ -211,16 +231,19 @@ export const assetService = {
       }
     }
 
-    // 本地模式：創建模擬資產
+    // 本地模式：創建資產並儲存 base64 圖片
+    const dataUrl = await fileToDataUrl(file);
+    const dimensions = await getImageDimensions(dataUrl);
+
     return this.create({
       userId: 'user-001',
       fileName: file.name,
-      originalUrl: URL.createObjectURL(file),
-      thumbnailUrl: URL.createObjectURL(file),
+      originalUrl: dataUrl,
+      thumbnailUrl: dataUrl,
       fileSize: file.size,
-      dimensions: { width: 0, height: 0 },
+      dimensions,
       fingerprint: {
-        pHash: 'local-mode',
+        pHash: `local-${Date.now()}`,
         orbDescriptors: '0',
         colorHistogram: 'computed',
         featureCount: 0
