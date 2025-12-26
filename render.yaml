@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: image-guardian-api
+    name: ai-auto-report-system
     runtime: docker
     region: singapore
     plan: free
