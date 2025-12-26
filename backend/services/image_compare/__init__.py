@@ -1,10 +1,8 @@
 """
 Image Comparison Services
-AI-powered image similarity detection using multiple algorithms
+使用 pHash 進行圖片相似度偵測
 """
 from .phash import PHashCompare
-from .orb import ORBCompare
-from .color import ColorHistogramCompare
 from .engine import ImageCompareEngine
 
-__all__ = ['PHashCompare', 'ORBCompare', 'ColorHistogramCompare', 'ImageCompareEngine']
+__all__ = ['PHashCompare', 'ImageCompareEngine']

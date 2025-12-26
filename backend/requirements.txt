@@ -5,12 +5,9 @@ python-multipart==0.0.6
 pydantic==2.5.3
 pydantic-settings==2.1.0
 
-# Image Processing
+# Image Processing (lightweight)
 pillow==10.2.0
 imagehash==4.3.1
-opencv-python-headless==4.9.0.80
-numpy==1.26.3
-scipy==1.12.0
 
 # Web Requests
 httpx==0.26.0
@@ -21,6 +18,3 @@ beautifulsoup4==4.12.3
 python-dotenv==1.0.0
 loguru==0.7.2
 aiofiles==23.2.1
-
-# CORS
-starlette==0.35.1
