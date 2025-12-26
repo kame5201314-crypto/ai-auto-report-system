@@ -102,15 +102,25 @@ const STORAGE_KEYS = {
 function getFromStorage<T>(key: string, defaultValue: T): T {
   try {
     const stored = localStorage.getItem(key);
+    console.log(`[Storage] 讀取 ${key}: ${stored ? `${Math.round(stored.length / 1024)}KB` : 'null'}`);
+
     if (stored) {
-      console.log(`[Storage] 從 ${key} 讀取成功，大小: ${Math.round(stored.length / 1024)}KB`);
-      return JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      console.log(`[Storage] ${key} 解析成功，項目數: ${Array.isArray(parsed) ? parsed.length : 'N/A'}`);
+      return parsed;
     } else {
-      console.log(`[Storage] ${key} 為空，使用預設值`);
+      console.log(`[Storage] ${key} 為空，使用預設值 (${Array.isArray(defaultValue) ? defaultValue.length : 'N/A'} 項)`);
       return defaultValue;
     }
   } catch (error) {
     console.error(`[Storage] 讀取 ${key} 失敗:`, error);
+    // 如果解析失敗，嘗試清除損壞的數據
+    try {
+      localStorage.removeItem(key);
+      console.warn(`[Storage] 已清除損壞的 ${key} 數據`);
+    } catch (e) {
+      console.error(`[Storage] 清除 ${key} 失敗:`, e);
+    }
     return defaultValue;
   }
 }
@@ -118,9 +128,20 @@ function getFromStorage<T>(key: string, defaultValue: T): T {
 function saveToStorage<T>(key: string, data: T): boolean {
   try {
     const jsonData = JSON.stringify(data);
-    console.log(`[Storage] 儲存 ${key}, 大小: ${Math.round(jsonData.length / 1024)}KB`);
+    const sizeKB = Math.round(jsonData.length / 1024);
+    console.log(`[Storage] 儲存 ${key}, 大小: ${sizeKB}KB, 項目數: ${Array.isArray(data) ? data.length : 'N/A'}`);
+
     localStorage.setItem(key, jsonData);
-    return true;
+
+    // 驗證儲存是否成功
+    const verify = localStorage.getItem(key);
+    if (verify && verify.length === jsonData.length) {
+      console.log(`[Storage] ✓ ${key} 儲存驗證成功`);
+      return true;
+    } else {
+      console.error(`[Storage] ✗ ${key} 儲存驗證失敗！預期: ${jsonData.length}, 實際: ${verify?.length || 0}`);
+      return false;
+    }
   } catch (error) {
     console.error(`[Storage] 儲存失敗 ${key}:`, error);
     // 如果是 QuotaExceededError，嘗試清理舊數據
@@ -134,6 +155,7 @@ function saveToStorage<T>(key: string, data: T): boolean {
         }
         // 再次嘗試儲存
         localStorage.setItem(key, JSON.stringify(data));
+        console.log(`[Storage] ✓ ${key} 清理後儲存成功`);
         return true;
       } catch {
         console.error('[Storage] 清理後仍無法儲存');
@@ -1445,3 +1467,71 @@ export function getBackendUrl(): string {
 }
 
 export default imageGuardianService;
+
+// ==================== Debug 工具（掛載到 window 便於除錯） ====================
+
+if (typeof window !== 'undefined') {
+  (window as unknown as Record<string, unknown>).__imageGuardianDebug = {
+    // 查看目前 localStorage 狀態
+    checkStorage: () => {
+      console.log('=== Image Guardian Storage Debug ===');
+      Object.entries(STORAGE_KEYS).forEach(([name, key]) => {
+        const data = localStorage.getItem(key);
+        console.log(`${name} (${key}):`, data ? `${Math.round(data.length / 1024)}KB` : 'empty');
+        if (data) {
+          try {
+            const parsed = JSON.parse(data);
+            console.log(`  → ${Array.isArray(parsed) ? parsed.length + ' 項' : 'object'}`);
+          } catch {
+            console.log('  → JSON 解析失敗');
+          }
+        }
+      });
+    },
+
+    // 查看資產
+    getAssets: () => {
+      const assets = assetService.getAll();
+      console.log('目前資產:', assets);
+      return assets;
+    },
+
+    // 手動儲存測試資產
+    saveTestAsset: () => {
+      const testAsset = {
+        id: 'test-' + Date.now(),
+        userId: 'user-001',
+        fileName: 'test.png',
+        originalUrl: 'data:image/png;base64,test',
+        thumbnailUrl: 'data:image/png;base64,test',
+        fileSize: 1000,
+        dimensions: { width: 100, height: 100 },
+        fingerprint: { pHash: 'test', orbDescriptors: '0', colorHistogram: 'test', featureCount: 0 },
+        metadata: { uploadedBy: 'test', uploadedAt: new Date().toISOString(), tags: ['test'], description: 'Test asset' },
+        status: 'indexed' as const,
+        scanStats: { totalScans: 0, violationsFound: 0 },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      const assets = assetService.getAll();
+      assets.push(testAsset);
+      const saved = saveToStorage(STORAGE_KEYS.ASSETS, assets);
+      console.log('測試資產儲存結果:', saved ? '成功' : '失敗');
+      return saved;
+    },
+
+    // 清除所有 Image Guardian 資料
+    clearAll: () => {
+      Object.values(STORAGE_KEYS).forEach(key => {
+        localStorage.removeItem(key);
+        console.log(`已清除: ${key}`);
+      });
+    },
+
+    // 服務參考
+    service: imageGuardianService,
+    STORAGE_KEYS
+  };
+
+  console.log('[Image Guardian] Debug 工具已載入，使用 window.__imageGuardianDebug 存取');
+}

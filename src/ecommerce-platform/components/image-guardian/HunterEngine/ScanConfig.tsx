@@ -40,9 +40,20 @@ const ScanConfig: React.FC<ScanConfigProps> = ({
   const [errors, setErrors] = useState<string[]>([]);
 
   useEffect(() => {
-    const loadedAssets = imageGuardianService.assets.getAll()
-      .filter(a => a.status === 'monitoring' || a.status === 'indexed');
-    setAssets(loadedAssets);
+    console.log('[ScanConfig] 開始載入資產...');
+    const allAssets = imageGuardianService.assets.getAll();
+    console.log(`[ScanConfig] 從 service 取得 ${allAssets.length} 個資產`);
+
+    const loadedAssets = allAssets.filter(a => a.status === 'monitoring' || a.status === 'indexed');
+    console.log(`[ScanConfig] 過濾後 (monitoring/indexed): ${loadedAssets.length} 個資產`);
+
+    if (loadedAssets.length === 0 && allAssets.length > 0) {
+      console.warn('[ScanConfig] 有資產但狀態不符合，顯示所有資產');
+      // 如果有資產但都不是 monitoring/indexed 狀態，顯示所有資產
+      setAssets(allAssets);
+    } else {
+      setAssets(loadedAssets);
+    }
   }, []);
 
   const toggleAsset = (assetId: string) => {
